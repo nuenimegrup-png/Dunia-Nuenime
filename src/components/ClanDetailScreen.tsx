@@ -17,6 +17,9 @@ import {
   Coins,
   Sparkles,
   Zap,
+  LogOut,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { Clan, WorldCity } from '../types/nuenime';
 import { ClanEmblemIcon, CityEmblemBadge } from './icons/NuenimeAssets';
@@ -81,7 +84,11 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
   const {
     activeAccount,
     joinedClanId,
-    joinClan,
+    allClans,
+    requestJoinClan,
+    cancelJoinRequest,
+    leaveClan,
+    getUserJoinRequest,
     relicShards,
     relicLevels,
     upgradeClanRelic,
@@ -93,8 +100,13 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
 
   const [isEditLogoModalOpen, setIsEditLogoModalOpen] = useState(false);
   const [editLogoUrl, setEditLogoUrl] = useState(clan.logoUrl ?? '');
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
   const isJoined = joinedClanId === clan.id;
+  const currentJoinedClan = joinedClanId ? allClans.find((c) => c.id === joinedClanId) : undefined;
+  const pendingRequest = getUserJoinRequest(clan.id);
   const relicInfo = getClanRelicInfo(clan.id, clan.cityName, clan.specialization);
   const currentRelicLevel = relicLevels[clan.id] ?? 1;
   const currentBuffBonus =
@@ -205,22 +217,22 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
   );
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-[#070d19] text-slate-100">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[#07090E] text-slate-100">
       {/* Sticky Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-950/90 px-3 py-2.5 backdrop-blur-md">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-[#0B0E14]/95 px-3.5 py-3 backdrop-blur-xl shrink-0 shadow-lg">
         <button
           type="button"
           onClick={onBack}
-          className="flex min-h-[40px] items-center gap-2 rounded-xl border border-slate-700/70 bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-slate-200 transition-colors hover:border-sky-400/50 hover:text-white active:scale-95 whitespace-nowrap shrink-0"
+          className="flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-slate-200 transition-colors hover:border-white/20 hover:bg-white/[0.08] active:scale-95 whitespace-nowrap shrink-0"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Kembali</span>
         </button>
 
         <div className="min-w-0 text-right">
-          <div className="font-display truncate text-sm font-bold text-white">{clan.name}</div>
-          <div className="font-mono text-[10.5px] text-slate-400 tabular-nums">
-            EXP Klan: {totalClanExp.toLocaleString('id-ID')} · {relicShards} Pecahan Relik
+          <div className="font-display truncate text-sm font-bold text-white tracking-wide">{clan.name}</div>
+          <div className="mt-0.5 font-mono text-[10.5px] text-slate-400 tabular-nums">
+            EXP Klan: <span className="font-bold text-sky-400">{totalClanExp.toLocaleString('id-ID')}</span> · <span className="font-bold text-amber-400">{relicShards}</span> Pecahan Relik
           </div>
         </div>
       </div>
@@ -286,33 +298,77 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                 Baris 2: [Gudang Senjata & Toko Logistik] (Full Width)
             */}
             <div className="mt-3.5 w-full max-w-sm space-y-2">
-              {/* Baris Pertama: 2 Tombol Simetris (Klan Aktif & Kota) */}
-              <div className="grid grid-cols-2 gap-2 w-full">
-                {isJoined ? (
+              {/* Baris Pertama: Tombol Keanggotaan & Kota */}
+              {isJoined ? (
+                <div className="grid grid-cols-2 gap-2 w-full">
                   <div className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-400/60 bg-emerald-950/70 px-3 text-xs font-bold text-emerald-200 shadow-sm">
                     <CheckCircle2 className="h-4 w-4 text-emerald-300 shrink-0" />
                     <span className="truncate">Klan Aktif Anda</span>
                   </div>
-                ) : (
+
                   <button
                     type="button"
-                    onClick={() => joinClan(clan.id)}
+                    onClick={() => setIsLeaveModalOpen(true)}
+                    className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-950/40 px-3 text-xs font-bold text-rose-300 hover:border-rose-400 hover:bg-rose-900/50 active:scale-95 transition-all shadow-sm"
+                  >
+                    <LogOut className="h-4 w-4 text-rose-400 shrink-0" />
+                    <span className="truncate">Keluar Klan</span>
+                  </button>
+                </div>
+              ) : pendingRequest ? (
+                <div className="grid grid-cols-2 gap-2 w-full">
+                  <div className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-amber-400/60 bg-amber-950/60 px-2.5 text-[11px] font-bold text-amber-200 shadow-sm">
+                    <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0 animate-pulse" />
+                    <span className="truncate">Menunggu Konfirmasi</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsSubmittingAction(true);
+                      await cancelJoinRequest(clan.id);
+                      setIsSubmittingAction(false);
+                    }}
+                    disabled={isSubmittingAction}
+                    className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 text-xs font-semibold text-slate-300 hover:border-rose-500/60 hover:text-rose-300 active:scale-95 transition-all shadow-sm"
+                  >
+                    <X className="h-4 w-4 text-slate-400 shrink-0" />
+                    <span className="truncate">Batalkan</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 w-full">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (joinedClanId && joinedClanId !== clan.id) {
+                        setIsSwitchModalOpen(true);
+                        return;
+                      }
+                      setIsSubmittingAction(true);
+                      const res = await requestJoinClan(clan.id);
+                      if (res.requiresLeaveFirst) {
+                        setIsSwitchModalOpen(true);
+                      }
+                      setIsSubmittingAction(false);
+                    }}
+                    disabled={isSubmittingAction}
                     className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-sky-300/65 bg-gradient-to-r from-sky-600 to-indigo-700 px-3 text-xs font-bold text-white shadow-md active:scale-95 transition-all"
                   >
                     <Shield className="h-4 w-4 shrink-0" />
                     <span className="truncate">Gabung Klan</span>
                   </button>
-                )}
 
-                <button
-                  type="button"
-                  onClick={() => onNavigateToCity(clan.cityId)}
-                  className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 text-xs font-semibold text-sky-200 hover:border-sky-400/60 active:scale-95 transition-all shadow-sm"
-                >
-                  <MapPin className="h-4 w-4 text-sky-300 shrink-0" />
-                  <span className="truncate">Kota {clan.cityName}</span>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => onNavigateToCity(clan.cityId)}
+                    className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 text-xs font-semibold text-sky-200 hover:border-sky-400/60 active:scale-95 transition-all shadow-sm"
+                  >
+                    <MapPin className="h-4 w-4 text-sky-300 shrink-0" />
+                    <span className="truncate">Kota {clan.cityName}</span>
+                  </button>
+                </div>
+              )}
 
               {/* Baris Kedua: Tombol Gudang Senjata & Toko Logistik Presisi */}
               <button
@@ -850,6 +906,131 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                   Hapus
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Keluar Klan */}
+      {isLeaveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-2xl border border-rose-500/40 bg-[#0B0E14] p-4 text-slate-100 shadow-2xl">
+            <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-bold text-white uppercase tracking-wide">
+                  Konfirmasi Keluar Klan
+                </h3>
+                <p className="text-[11px] text-slate-400">{clan.name}</p>
+              </div>
+            </div>
+
+            <div className="mt-3.5 space-y-2.5 text-xs text-slate-300 leading-relaxed">
+              <p>
+                Apakah Anda yakin ingin keluar dari klan <strong className="text-white">{clan.name}</strong>?
+              </p>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-[11px] text-slate-300 space-y-1">
+                <p className="text-emerald-300 font-semibold flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" /> Akun, EXP, dan saldo Crystal Anda tetap aman.
+                </p>
+                <p className="text-sky-300 font-semibold flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" /> Setelah keluar, Anda dapat mengajukan permintaan bergabung ke klan lain.
+                </p>
+              </div>
+              {isCurrentUserLeader && clan.members.length > 1 && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-2.5 text-[11px] text-amber-200">
+                  <strong className="block text-amber-300 font-bold mb-0.5">Perhatian Pemimpin Klan:</strong>
+                  Anda memiliki {clan.members.length} anggota. Anda wajib mengalihkan jabatan kepemimpinan terlebih dahulu sebelum dapat keluar klan.
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsLeaveModalOpen(false)}
+                disabled={isSubmittingAction}
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSubmittingAction(true);
+                  const res = await leaveClan(clan.id);
+                  setIsSubmittingAction(false);
+                  if (res.ok) {
+                    setIsLeaveModalOpen(false);
+                  }
+                }}
+                disabled={isSubmittingAction}
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-rose-500/50 bg-rose-600 text-xs font-bold text-white hover:bg-rose-500 active:scale-95 transition-all shadow-md"
+              >
+                {isSubmittingAction ? 'Memproses...' : 'Keluar dari Klan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dialog Konfirmasi Berpindah Klan */}
+      {isSwitchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-2xl border border-sky-500/40 bg-[#0B0E14] p-4 text-slate-100 shadow-2xl">
+            <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-bold text-white uppercase tracking-wide">
+                  Konfirmasi Berpindah Klan
+                </h3>
+                <p className="text-[11px] text-sky-300">Aturan 1 Anggota 1 Klan Aktif</p>
+              </div>
+            </div>
+
+            <div className="mt-3.5 space-y-2.5 text-xs text-slate-300 leading-relaxed">
+              <p>
+                Anda masih tergabung dalam klan <strong className="text-amber-300">{currentJoinedClan?.name || 'Klan Saat Ini'}</strong>.
+              </p>
+              <p>
+                Untuk bergabung dengan klan <strong className="text-sky-300">{clan.name}</strong>, Anda harus keluar dari klan saat ini terlebih dahulu. Apakah Anda ingin keluar dari klan sekarang?
+              </p>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-[11px] text-slate-300 space-y-1">
+                <p className="text-amber-300 font-medium">
+                  Catatan: Setelah keluar, Anda perlu mengajukan permintaan bergabung ke klan tujuan dan menunggu konfirmasi dari Pemimpin klan tujuan.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsSwitchModalOpen(false)}
+                disabled={isSubmittingAction}
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!currentJoinedClan) return;
+                  setIsSubmittingAction(true);
+                  const res = await leaveClan(currentJoinedClan.id);
+                  setIsSubmittingAction(false);
+                  if (res.ok) {
+                    setIsSwitchModalOpen(false);
+                  }
+                }}
+                disabled={isSubmittingAction}
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-rose-500/50 bg-rose-600 text-xs font-bold text-white hover:bg-rose-500 active:scale-95 transition-all shadow-md"
+              >
+                {isSubmittingAction ? 'Memproses...' : 'Keluar dari Klan'}
+              </button>
             </div>
           </div>
         </div>

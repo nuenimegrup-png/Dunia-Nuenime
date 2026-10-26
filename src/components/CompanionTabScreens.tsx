@@ -159,14 +159,14 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
 
   if (activeTab === 'beranda') {
     return (
-      <div className="nuenime-scroll flex h-full w-full flex-col overflow-y-auto bg-[#070d19] px-3.5 py-3.5 text-slate-100">
+      <div className="nuenime-scroll flex h-full w-full flex-col overflow-y-auto bg-[#07090E] px-3.5 py-3.5 text-slate-100">
         {/* Top Brand Header */}
-        <div className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
-          <div className="flex items-center gap-2.5">
-            <NuenimeCrestIcon size={36} />
+        <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 backdrop-blur-xl shadow-xl">
+          <div className="flex items-center gap-3">
+            <NuenimeCrestIcon size={38} />
             <div>
-              <h1 className="font-display text-base font-bold text-white">Beranda Nuenime</h1>
-              <p className="text-[11px] text-slate-400">
+              <h1 className="font-display text-base font-bold tracking-wide text-white">Beranda Nuenime</h1>
+              <p className="mt-0.5 font-mono text-[11px] text-slate-400">
                 7 Kota · {globalWorldStats.totalClansCount} Klan · {globalWorldStats.totalWorldExp.toLocaleString('id-ID')} EXP Dunia
               </p>
             </div>
@@ -174,7 +174,7 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
           <button
             type="button"
             onClick={() => onOpenWorldMap()}
-            className="flex min-h-[38px] items-center gap-1.5 rounded-xl border border-sky-400/50 bg-sky-500/20 px-3 py-1.5 text-xs font-semibold text-sky-200 hover:bg-sky-500/30 whitespace-nowrap shrink-0"
+            className="flex h-9 items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 px-3.5 text-xs font-bold text-white shadow-sm transition-all active:scale-95 whitespace-nowrap shrink-0"
           >
             <Compass className="h-4 w-4" />
             <span>Buka Peta</span>
@@ -184,7 +184,7 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
         {/* Quick Jump to 7 Cities */}
         <div className="mt-3.5">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="font-display text-sm font-bold text-white">Status 7 Kota Nuenime</h3>
+            <h3 className="font-display text-sm font-bold tracking-wide text-white">Status 7 Kota Nuenime</h3>
             <span className="text-[11px] text-slate-400">Ketuk untuk fokus di peta</span>
           </div>
 
@@ -192,23 +192,27 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
             {cities.map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-slate-800/90 bg-slate-900/70 p-2.5"
+                className="flex items-center justify-between gap-2.5 rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3 backdrop-blur-xl shadow-xl hover:border-white/20 transition-all"
               >
                 <button
                   type="button"
                   onClick={() => onOpenWorldMap(c)}
-                  className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
-                  <CityEmblemBadge cityId={c.id} material={c.material} size={36} />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-display text-xs font-bold text-white">{c.name}</span>
-                      <span className="rounded bg-slate-800 px-1.5 py-0.2 font-mono text-[9.5px] text-sky-300">
+                  <CityEmblemBadge cityId={c.id} material={c.material} size={38} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-display text-sm font-bold tracking-wide text-white">{c.name}</span>
+                      <span className="rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9.5px] text-slate-300">
                         Lv.{c.level} · {c.tier}
                       </span>
                     </div>
-                    <div className="truncate text-[10.5px] text-slate-400">
-                      {c.totalExp.toLocaleString('id-ID')} EXP · {c.clans.length}/{c.maxClans} Klan · Bos: {c.boss?.name || 'Penjaga Kota'}
+                    <div className="truncate font-mono text-[10.5px] text-slate-400 mt-1">
+                      <span className="font-semibold text-slate-200">{c.totalExp.toLocaleString('id-ID')} EXP</span>
+                      <span className="text-slate-600"> · </span>
+                      <span>{c.clans.length}/{c.maxClans} Klan</span>
+                      <span className="text-slate-600"> · </span>
+                      <span>Bos: {c.boss?.name || 'Penjaga Kota'}</span>
                     </div>
                   </div>
                 </button>
@@ -216,7 +220,7 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenCityDetail(c)}
-                  className="flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-[11px] font-medium text-sky-300 hover:border-sky-400/50 whitespace-nowrap shrink-0"
+                  className="flex h-8 items-center gap-1 rounded-xl border border-white/10 bg-white/[0.06] hover:bg-white/[0.1] px-3 text-xs font-semibold text-slate-200 transition-colors active:scale-95 whitespace-nowrap shrink-0"
                 >
                   <span>Masuk Kota</span>
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -237,15 +241,15 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
       : undefined;
 
     return (
-      <div className="nuenime-scroll flex h-full w-full flex-col overflow-y-auto bg-[#070d19] px-3.5 py-3.5 text-slate-100 space-y-3.5">
+      <div className="nuenime-scroll flex h-full w-full flex-col overflow-y-auto bg-[#07090E] px-3.5 py-3.5 text-slate-100 space-y-3.5">
         {/* Profile Card: Real User Profile + Avatar Border + Level/Rank */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4">
+        <div className="rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-4 backdrop-blur-xl shadow-xl space-y-3.5">
           <div className="flex items-center gap-3">
             {/* Avatar with Equipped Border from Nuenime APK */}
             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
               {/* Circular Avatar / Fallback */}
               <div
-                className={`relative h-14 w-14 overflow-hidden rounded-full bg-gradient-to-tr from-sky-600 via-indigo-600 to-purple-700 flex items-center justify-center ${
+                className={`relative h-14 w-14 overflow-hidden rounded-full bg-slate-900 border border-white/10 flex items-center justify-center ${
                   borderMeta?.assetUrl
                     ? ''
                     : activeAccount.isVip
@@ -286,23 +290,23 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
               )}
             </div>
 
-            {/* User Identity Column (Clean, single-line typography) */}
+            {/* User Identity Column */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="shrink-0 rounded border border-sky-400/50 bg-sky-950/90 px-1.5 py-0.2 font-mono text-[9px] font-bold text-sky-200 tabular-nums">
+                <span className="shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[9.5px] font-bold text-slate-300 tabular-nums">
                   LV.{activeAccount.level || 1} · {activeAccount.rank || 'STONE'}
                 </span>
                 {activeAccount.isVip && (
-                  <span className="shrink-0 rounded border border-amber-400/50 bg-amber-950/90 px-1.5 py-0.2 font-mono text-[9px] font-bold text-amber-300">
+                  <span className="shrink-0 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[9.5px] font-bold text-amber-300">
                     VIP
                   </span>
                 )}
-                <span className="truncate text-[10px] font-medium text-slate-400">
+                <span className="truncate text-[10.5px] font-normal text-slate-400">
                   Petualang Nuenime
                 </span>
               </div>
 
-              <h1 className="font-display truncate text-base font-bold text-white tracking-wide mt-0.5">
+              <h1 className="font-display truncate text-base font-bold tracking-wide text-white mt-1">
                 {activeAccount.displayName}
               </h1>
 
@@ -312,24 +316,24 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
             </div>
           </div>
 
-          {/* 3-Column Stats Row: Single-line values, crisp and clean */}
-          <div className="mt-3.5 grid grid-cols-3 gap-2 border-t border-slate-800/90 pt-3 text-center">
+          {/* 3-Column Stats Row */}
+          <div className="grid grid-cols-3 gap-2 border-t border-white/5 pt-3 text-center">
             <div className="min-w-0">
               <div className="truncate text-[10px] font-medium text-slate-400">Saldo Crystal</div>
-              <div className="mt-0.5 truncate text-xs font-bold text-amber-300 font-mono inline-flex items-center gap-1 justify-center">
+              <div className="mt-1 font-mono text-xs font-bold text-slate-100 inline-flex items-center gap-1 justify-center">
                 <NuenimeCrystalIcon size={13} />
                 <span>{userCrystals.toLocaleString('id-ID')}</span>
               </div>
             </div>
             <div className="min-w-0">
               <div className="truncate text-[10px] font-medium text-slate-400">Kota Domisili</div>
-              <div className="mt-0.5 truncate text-xs font-semibold text-sky-300">
+              <div className="mt-1 truncate text-xs font-semibold text-sky-400">
                 {featuredCity ? `${featuredCity.name} (Lv.${featuredCity.level})` : 'Belum Terpilih'}
               </div>
             </div>
             <div className="min-w-0">
               <div className="truncate text-[10px] font-medium text-slate-400">Kontribusi EXP</div>
-              <div className="mt-0.5 truncate text-xs font-bold text-emerald-300 font-mono tabular-nums">
+              <div className="mt-1 truncate text-xs font-bold text-slate-100 font-mono tabular-nums">
                 {playerContribution.toLocaleString('id-ID')} EXP
               </div>
             </div>
@@ -338,22 +342,22 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
 
         {/* Afiliasi Kota & Klan Terbuka */}
         <div className="space-y-2">
-          <h2 className="font-display text-sm font-bold text-white">Afiliasi Wilayah & Klan</h2>
+          <h2 className="font-display text-sm font-bold tracking-wide text-white">Afiliasi Wilayah & Klan</h2>
 
           {/* Kota Aktif / Belum Terpilih */}
           {featuredCity ? (
             <button
               type="button"
               onClick={() => onOpenCityDetail(featuredCity)}
-              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-left transition-colors hover:border-sky-400/50 active:scale-[0.99]"
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 text-left backdrop-blur-xl shadow-xl transition-all hover:border-white/20 active:scale-[0.99]"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <CityEmblemBadge cityId={featuredCity.id} material={featuredCity.material} size={40} />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-semibold text-sky-300 truncate">
+                  <div className="text-[10px] font-semibold text-sky-400 truncate font-mono">
                     Kota {featuredCity.name} · Lv.{featuredCity.level} ({featuredCity.tier})
                   </div>
-                  <div className="font-display text-xs font-bold text-white truncate mt-0.5">
+                  <div className="font-display text-xs font-bold text-white tracking-wide truncate mt-0.5">
                     {featuredCity.totalExp.toLocaleString('id-ID')} EXP · {featuredCity.clans.length}/{featuredCity.maxClans} Klan
                   </div>
                   <div className="truncate text-[10px] text-slate-400 mt-0.5">
@@ -364,14 +368,14 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
               <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
             </button>
           ) : (
-            <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-3.5 text-left">
+            <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0B0E14]/70 p-3.5 text-left backdrop-blur-xl">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sky-800/60 bg-sky-950/60 text-sky-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300">
                   <Compass className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-semibold text-sky-300 truncate">Kota Domisili</div>
-                  <div className="font-display text-xs font-bold text-white truncate mt-0.5">
+                  <div className="text-[10px] font-semibold text-slate-400 truncate">Kota Domisili</div>
+                  <div className="font-display text-xs font-bold text-white tracking-wide truncate mt-0.5">
                     Belum Memilih Kota
                   </div>
                   <div className="truncate text-[10px] text-slate-400 mt-0.5">
@@ -382,7 +386,7 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
               <button
                 type="button"
                 onClick={() => onSwitchTab('dunia')}
-                className="flex items-center gap-1 rounded-xl border border-sky-400/50 bg-sky-500/20 px-2.5 py-1.5 text-[11px] font-semibold text-sky-200 hover:bg-sky-500/30 active:scale-95 shrink-0"
+                className="flex items-center gap-1 rounded-xl bg-sky-600 hover:bg-sky-500 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm active:scale-95 shrink-0 transition-all"
               >
                 <span>Pilih Kota</span>
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -395,7 +399,7 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
             <button
               type="button"
               onClick={() => onOpenClanDetail(joinedClan)}
-              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-left transition-colors hover:border-sky-400/50 active:scale-[0.99]"
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 text-left backdrop-blur-xl shadow-xl transition-all hover:border-white/20 active:scale-[0.99]"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <ClanEmblemIcon
@@ -405,11 +409,11 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
                   size={40}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-semibold text-amber-300 truncate">Klan Aktif</div>
-                  <div className="font-display text-xs font-bold text-white truncate mt-0.5">
+                  <div className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider truncate">Klan Aktif</div>
+                  <div className="font-display text-xs font-bold text-white tracking-wide truncate mt-0.5">
                     {joinedClan.name}
                   </div>
-                  <div className="truncate text-[10px] text-slate-400 mt-0.5">
+                  <div className="truncate font-mono text-[10px] text-slate-400 mt-0.5">
                     {joinedClan.totalExp.toLocaleString('id-ID')} EXP · {joinedClan.memberCount}/{joinedClan.maxMembers} Anggota
                   </div>
                 </div>
@@ -417,14 +421,14 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
               <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
             </button>
           ) : (
-            <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-3.5 text-left">
+            <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0B0E14]/70 p-3.5 text-left backdrop-blur-xl">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/80 text-amber-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-300">
                   <Shield className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-semibold text-amber-300 truncate">Status Klan</div>
-                  <div className="font-display text-xs font-bold text-white truncate mt-0.5">
+                  <div className="text-[10px] font-semibold text-slate-400 truncate">Status Klan</div>
+                  <div className="font-display text-xs font-bold text-white tracking-wide truncate mt-0.5">
                     Belum Bergabung dengan Klan
                   </div>
                   <div className="truncate text-[10px] text-slate-400 mt-0.5">
@@ -435,7 +439,7 @@ export const CompanionTabScreens: React.FC<CompanionTabProps> = ({
               <button
                 type="button"
                 onClick={() => onSwitchTab('dunia')}
-                className="flex items-center gap-1 rounded-xl border border-sky-400/50 bg-sky-500/20 px-2.5 py-1.5 text-[11px] font-semibold text-sky-200 hover:bg-sky-500/30 active:scale-95 shrink-0"
+                className="flex items-center gap-1 rounded-xl bg-sky-600 hover:bg-sky-500 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm active:scale-95 shrink-0 transition-all"
               >
                 <span>Pilih Kota</span>
                 <ChevronRight className="h-3.5 w-3.5" />

@@ -158,11 +158,35 @@ export interface ClanMember {
   /** Total EXP kontribusi anggota ke klan ini */
   contributionScore: number;
   completedMissionsCount: number;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: 'active' | 'left' | 'removed' | 'ACTIVE' | 'INACTIVE';
+  leftAt?: string | null;
   level?: number;
   avatarUrl?: string | null;
   borderUrl?: string | null;
   lastActive?: string;
+}
+
+/**
+ * 4.1 SISTEM PERMINTAAN BERGABUNG KLAN (JOIN REQUESTS)
+ */
+export type ClanJoinRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export interface ClanJoinRequest {
+  id: string;
+  clanId: string;
+  userId: string;
+  status: ClanJoinRequestStatus;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  createdAt: string;
+  displayName?: string;
+  avatarUrl?: string | null;
+  borderUrl?: string | null;
+  level?: number;
+  exp?: number;
+  rank?: string;
+  clanName?: string;
+  clanTag?: string;
 }
 
 /**
@@ -200,6 +224,9 @@ export interface Clan {
   reputationRank: string;
   /** Saldo Coin klan untuk pembelian senjata sekali pakai */
   coins: number;
+  status?: 'active' | 'disbanded' | 'inactive';
+  disbandedAt?: string | null;
+  disbandedBy?: string | null;
   members: ClanMember[];
 }
 

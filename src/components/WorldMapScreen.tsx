@@ -277,20 +277,21 @@ export const WorldMapScreen: React.FC<WorldMapScreenProps> = ({
       />
 
       {/* Bottom Unique City Boss Panel when a City Boss Marker is Selected */}
+      {/* Bottom Unique City Boss Panel when a City Boss Marker is Selected */}
       {selectedBoss && !selectedCity && (
         <div
-          className="pointer-events-auto absolute bottom-2.5 left-2.5 right-2.5 z-30 transition-all duration-200"
+          className="pointer-events-auto absolute bottom-2.5 left-2.5 right-2.5 z-30 transition-all duration-200 max-w-lg mx-auto"
           role="region"
           aria-label={`Informasi Bos Kota ${selectedBoss.name}`}
         >
-          <div className="relative rounded-2xl border border-rose-500/50 bg-[#0B0E14]/98 p-3 sm:p-3.5 backdrop-blur-xl">
+          <div className="relative rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 backdrop-blur-xl shadow-2xl">
             <button
               type="button"
               onClick={() => setSelectedBossId(null)}
               aria-label="Tutup panel Bos Kota"
-              className="absolute top-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-xl border border-slate-700/80 bg-slate-900/90 text-slate-400 hover:border-slate-500 hover:text-white active:scale-95"
+              className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white active:scale-95 transition-colors"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
 
             <div className="flex items-start gap-3 pr-6">
@@ -303,36 +304,37 @@ export const WorldMapScreen: React.FC<WorldMapScreenProps> = ({
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold">
-                  <span className="rounded border border-rose-400/50 bg-rose-950/90 px-1.5 py-0.5 font-mono text-rose-200">
+                  <span className="rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 font-mono text-slate-300">
                     Lv.{selectedBoss.level} · {selectedBoss.tier}
                   </span>
-                  <span className="text-amber-300">Bos Kota {selectedBoss.cityName}</span>
-                  <span
-                    className={`rounded px-1.5 py-0.5 text-[9.5px] font-bold ${
-                      selectedBoss.currentHp > 0
-                        ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {selectedBoss.currentHp > 0 ? 'Status: Aktif' : 'Status: Kalah'}
+                  <span className="text-slate-400 font-medium">Bos Wilayah {selectedBoss.cityName}</span>
+                  <span className="flex items-center gap-1 text-[10px] text-slate-300">
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        selectedBoss.currentHp > 0
+                          ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)]'
+                          : 'bg-emerald-500'
+                      }`}
+                    />
+                    {selectedBoss.currentHp > 0 ? 'Aktif' : 'Kalah'}
                   </span>
                 </div>
-                <h2 className="font-display mt-0.5 truncate text-sm font-bold text-white">
+                <h2 className="font-display mt-0.5 truncate text-sm font-bold text-white tracking-wide">
                   {selectedBoss.name} — {selectedBoss.title}
                 </h2>
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-300">
+                <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">
                   {selectedBoss.description}
                 </p>
               </div>
             </div>
 
             {/* Strict Separation of Boss HP vs City HP */}
-            <div className="mt-2.5 space-y-1.5">
+            <div className="mt-2.5 space-y-1">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-rose-200">
+                <span className="font-medium text-slate-400">
                   HP Bos ({selectedBoss.element})
                 </span>
-                <span className="font-mono font-bold text-white tabular-nums">
+                <span className="font-mono font-bold text-slate-200 tabular-nums">
                   {selectedBoss.currentHp.toLocaleString('id-ID')} /{' '}
                   {selectedBoss.maxHp.toLocaleString('id-ID')} HP
                   {lastDamageDealt ? (
@@ -342,49 +344,46 @@ export const WorldMapScreen: React.FC<WorldMapScreenProps> = ({
                   ) : null}
                 </span>
               </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                 <div
-                  className="h-full transition-all duration-200"
+                  className="h-full rounded-full transition-all duration-200 bg-rose-500"
                   style={{
                     width: `${Math.round((selectedBoss.currentHp / selectedBoss.maxHp) * 100)}%`,
-                    backgroundColor: selectedBoss.accentColor,
                   }}
                 />
               </div>
 
               {selectedBossCity && (
-                <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/75 px-2.5 py-1 text-[10px] text-slate-300">
-                  <span className="inline-flex items-center gap-1 text-sky-300 font-semibold">
-                    <Shield className="h-3 w-3" />
+                <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-1 text-[10px] text-slate-400">
+                  <span className="inline-flex items-center gap-1 text-slate-300 font-medium">
+                    <Shield className="h-3 w-3 text-slate-400" />
                     Penjaga Wilayah {selectedBossCity.name}
                   </span>
-                  <span className="font-mono font-bold text-amber-300 tabular-nums">
+                  <span className="font-mono text-slate-400 tabular-nums">
                     Kota Lv.{selectedBossCity.level} • {selectedBossCity.tier}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Raid Action Footer - 3 Uniform Buttons (Grid 3 Kolom Presisi, Responsif & Tanpa Emoji) */}
-            <div className="mt-3 grid grid-cols-3 gap-1.5 sm:gap-2">
+            {/* Raid Action Footer - 3 Uniform Clean Buttons */}
+            <div className="mt-2.5 grid grid-cols-3 gap-2 border-t border-white/[0.08] pt-2">
               {selectedBossCity ? (
                 <button
                   type="button"
                   onClick={() => handleSelectCityMarker(selectedBossCity)}
                   title={`Menuju ke Kota ${selectedBossCity.name}`}
-                  className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-sky-500/40 bg-gradient-to-b from-sky-950/40 to-slate-900/90 px-1 text-[11px] sm:text-xs font-semibold text-sky-200 shadow-sm transition-all hover:border-sky-400 hover:text-white active:scale-95"
+                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-1 text-xs font-semibold text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95"
                 >
                   <CityEmblemBadge
                     cityId={selectedBossCity.id}
                     material={selectedBossCity.material}
                     size={16}
                   />
-                  <span className="truncate">
-                    Ke Kota<span className="hidden min-[480px]:inline">&nbsp;{selectedBossCity.name}</span>
-                  </span>
+                  <span className="truncate">Ke Kota</span>
                 </button>
               ) : (
-                <div className="flex h-10 w-full items-center justify-center rounded-xl border border-slate-800 bg-slate-900/50 px-1 text-[10.5px] text-slate-400">
+                <div className="flex h-9 w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-1 text-xs text-slate-400">
                   <span className="truncate">{joinedClan?.name ?? 'Klan Aktif'}</span>
                 </div>
               )}
@@ -393,21 +392,19 @@ export const WorldMapScreen: React.FC<WorldMapScreenProps> = ({
                 type="button"
                 onClick={() => setIsShopOpen(true)}
                 title="Buka Toko Senjata & Gudang Inventory Klan"
-                className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-amber-500/50 bg-gradient-to-b from-amber-950/40 to-amber-950/80 px-1 text-[11px] sm:text-xs font-semibold text-amber-200 shadow-sm shadow-amber-950/30 transition-all hover:border-amber-400 hover:text-amber-100 active:scale-95"
+                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-1 text-xs font-semibold text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95"
               >
-                <Package className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                <Package className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                 <span className="truncate">Gudang Klan</span>
               </button>
 
               {joinedClan && selectedBoss.cityId === joinedClan.cityId ? (
                 <div
                   title={`Bos ${selectedBoss.name} adalah Penjaga Kota ${selectedBossCity?.name || ''} tempat klan Anda bernaung. Anggota klan tidak dapat menyerang bos pelindung kotanya sendiri.`}
-                  className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-gradient-to-b from-emerald-950/40 to-slate-900/90 px-1 text-[11px] sm:text-xs font-semibold text-emerald-300 shadow-sm"
+                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-1 text-xs font-semibold text-emerald-300"
                 >
                   <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                  <span className="truncate">
-                    Bos Pelindung<span className="hidden min-[480px]:inline">&nbsp;Kota Anda</span>
-                  </span>
+                  <span className="truncate">Pelindung Kota</span>
                 </div>
               ) : selectedBoss.currentHp > 0 ? (
                 <button
@@ -417,12 +414,10 @@ export const WorldMapScreen: React.FC<WorldMapScreenProps> = ({
                     setIsRaidOpen(true);
                   }}
                   title="Serang Bos Kota Musuh Menggunakan Senjata Klan"
-                  className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-rose-500/70 bg-gradient-to-r from-rose-600 via-rose-600 to-rose-700 px-1 text-[11px] sm:text-xs font-bold text-white shadow-md shadow-rose-950/50 transition-all hover:brightness-110 active:scale-95"
+                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-1 text-xs font-bold text-white transition-all hover:bg-rose-500 active:scale-95 shadow-sm"
                 >
-                  <Swords className="h-3.5 w-3.5 shrink-0 text-white" />
-                  <span className="truncate">
-                    Serang Bos<span className="hidden min-[480px]:inline">&nbsp;Musuh</span>
-                  </span>
+                  <Flame className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Serang Bos</span>
                 </button>
               ) : (
                 <button
@@ -432,9 +427,9 @@ export const WorldMapScreen: React.FC<WorldMapScreenProps> = ({
                     setLastDamageDealt(null);
                   }}
                   title="Bangkitkan Kembali Bos Kota"
-                  className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-sky-400/50 bg-slate-800 px-1 text-[11px] sm:text-xs font-semibold text-sky-200 hover:bg-slate-700 active:scale-95"
+                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-1 text-xs font-semibold text-sky-300 hover:bg-white/[0.08] active:scale-95"
                 >
-                  <RotateCcw className="h-3.5 w-3.5 shrink-0 text-sky-300" />
+                  <RotateCcw className="h-3.5 w-3.5 shrink-0 text-sky-400" />
                   <span className="truncate">Bangkitkan</span>
                 </button>
               )}

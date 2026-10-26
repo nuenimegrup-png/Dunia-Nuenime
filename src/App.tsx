@@ -37,10 +37,42 @@ function NuenimeWorldAppInner() {
     globalWorldStats,
   } = useNuenimeRpg();
 
-  const [activeBottomTab, setActiveBottomTab] = useState<BottomNavTab>('dunia');
-  const [screenStack, setScreenStack] = useState<ScreenViewState[]>([{ type: 'WORLD_MAP' }]);
+  const [activeBottomTab, setActiveBottomTab] = useState<BottomNavTab>(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const tab = sp.get('tab');
+      if (tab === 'klan' || tab === 'clans' || tab === 'clan') return 'klan';
+      if (tab === 'karakter') return 'karakter';
+      if (tab === 'beranda') return 'beranda';
+      if (tab === 'lainnya') return 'lainnya';
+    }
+    return 'dunia';
+  });
+  const [screenStack, setScreenStack] = useState<ScreenViewState[]>(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      const tab = sp.get('tab');
+      if (tab === 'klan' || tab === 'clans' || tab === 'clan') return [{ type: 'CLAN_MAIN' }];
+    }
+    return [{ type: 'WORLD_MAP' }];
+  });
   const [selectedCityId, setSelectedCityId] = useState<CityId | null>('aetheria');
   const [desktopFullscreenMode, setDesktopFullscreenMode] = useState<boolean>(false);
+
+  // Sync tab if URL changes or postMessage triggers
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleUrlTab = () => {
+      const sp = new URLSearchParams(window.location.search);
+      const tab = sp.get('tab');
+      if (tab === 'klan' || tab === 'clans' || tab === 'clan') {
+        setActiveBottomTab('klan');
+        setScreenStack([{ type: 'CLAN_MAIN' }]);
+      }
+    };
+    window.addEventListener('popstate', handleUrlTab);
+    return () => window.removeEventListener('popstate', handleUrlTab);
+  }, []);
 
   // Always resolve selectedCity from live repository state so EXP/Level/Clans stay reactive
   const selectedCity = selectedCityId ? getCityById(selectedCityId) ?? null : null;

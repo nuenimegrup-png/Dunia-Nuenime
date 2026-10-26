@@ -60,102 +60,97 @@ export const WorldHeader: React.FC<WorldHeaderProps> = ({
   };
 
   return (
-    <header className="pointer-events-none absolute top-0 left-0 right-0 z-30 flex flex-col gap-1.5 px-2 pt-2 sm:px-3 sm:pt-3">
-      {/* Row 1: Main RPG Header Plaque */}
-      <div className="pointer-events-auto flex items-center gap-1.5">
-        {/* Back Button */}
-        <button
-          type="button"
-          onClick={onBackClick}
-          aria-label="Kembali ke Nuenime"
-          title="Kembali ke Aplikasi Utama Nuenime"
-          className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl border border-slate-700/80 bg-[#0B0E14]/95 text-slate-100 shadow-[0_4px_14px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-all hover:border-sky-400/60 hover:text-white active:scale-95"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+    <header className="pointer-events-none absolute top-0 left-0 right-0 z-30 flex flex-col gap-1.5 px-2.5 pt-2.5 sm:px-3 sm:pt-3 max-w-lg mx-auto">
+      {/* Row 1: Unified Sleek Header Bar */}
+      <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-2 backdrop-blur-xl shadow-xl">
+        {/* Left: Back Button + Emblem & Title */}
+        <div className="flex min-w-0 items-center gap-2">
+          {/* Back Button */}
+          <button
+            type="button"
+            onClick={onBackClick}
+            aria-label="Kembali ke Nuenime"
+            title="Kembali ke Aplikasi Utama Nuenime"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 transition-colors hover:bg-white/10 hover:text-white active:scale-95"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
 
-        {/* Central Obsidian Plaque */}
-        <div className="flex min-w-0 flex-1 items-center justify-between gap-1.5 rounded-xl border border-slate-700/80 bg-[#0B0E14]/95 px-2 py-1 shadow-[0_6px_20px_rgba(0,0,0,0.85)] backdrop-blur-xl sm:px-2.5 sm:py-1.5">
-          {/* Left: Emblem & Title */}
-          <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2">
+          {/* Emblem & Title */}
+          <div className="flex min-w-0 items-center gap-2">
             <img
               src="/assets/nuenime/dunia-nuenime-emblem.png"
               alt="Dunia Nuenime Emblem"
-              className="h-6 w-6 shrink-0 object-contain drop-shadow-[0_0_8px_rgba(56,189,248,0.5)] sm:h-7 sm:w-7"
+              className="h-6 w-6 shrink-0 object-contain drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]"
             />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1">
-                <h1 className="font-display truncate text-[13px] font-bold leading-tight text-white tracking-tight sm:text-[14px]">
-                  Dunia Nuenime
-                </h1>
-                <span className="rounded border border-sky-400/40 bg-sky-950/90 px-1 py-0.2 font-mono text-[8px] font-bold text-sky-200 whitespace-nowrap">
-                  RPG
-                </span>
-              </div>
-              <p className="truncate text-[9.5px] leading-tight font-medium text-slate-400">
+            <div className="min-w-0">
+              <h1 className="font-display truncate text-[13px] font-bold leading-tight text-white tracking-wide sm:text-sm">
+                Dunia Nuenime
+              </h1>
+              <p className="truncate text-[10px] leading-tight font-medium text-slate-400">
                 {activeAccount.displayName}
               </p>
             </div>
           </div>
+        </div>
 
-          {/* Right: Crystal Pill & RPG Actions */}
-          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-            {/* Crystal Balance Badge */}
-            <div
-              title={`Saldo Crystal: ${userCrystals.toLocaleString('id-ID')} Crystal\n(Dibutuhkan 2.000 Crystal untuk mendirikan klan)`}
-              className="flex h-7 items-center gap-1.5 rounded-lg border border-sky-400/40 bg-sky-950/70 px-1.5 font-mono text-[10.5px] font-bold text-sky-200 shadow-sm sm:h-8 sm:px-2"
-            >
-              <NuenimeCrystalIcon size={14} />
-              <span className="tabular-nums">
-                <span className="min-[430px]:hidden">{formatCompactCrystals(userCrystals)}</span>
-                <span className="hidden min-[430px]:inline">{userCrystals.toLocaleString('id-ID')}</span>
-              </span>
-            </div>
-
-            {/* Audio Toggle Button */}
-            <button
-              type="button"
-              onClick={toggleSound}
-              aria-label={soundEnabled ? 'Matikan suara RPG' : 'Aktifkan suara RPG'}
-              title={soundEnabled ? 'Audio RPG Aktif' : 'Audio RPG Bisu'}
-              className={`flex h-7 w-7 items-center justify-center rounded-lg border transition-all active:scale-95 sm:h-8 sm:w-8 ${
-                soundEnabled
-                  ? 'border-sky-400/55 bg-sky-950/80 text-sky-200'
-                  : 'border-slate-700 bg-slate-900 text-slate-400'
-              }`}
-            >
-              {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-            </button>
-
-            {/* Guide Button */}
-            <button
-              type="button"
-              onClick={onOpenLegendModal}
-              aria-label="Panduan Eksplorasi Dunia"
-              title="Panduan Peta & Kontrol"
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-600/70 bg-slate-900 font-display text-xs font-bold text-slate-100 transition-all hover:border-sky-400/60 hover:text-sky-200 active:scale-95 sm:h-8 sm:w-8"
-            >
-              !
-            </button>
+        {/* Right: Crystal Pill & Action Controls */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {/* Crystal Balance Badge */}
+          <div
+            title={`Saldo Crystal: ${userCrystals.toLocaleString('id-ID')} Crystal\n(Dibutuhkan 2.000 Crystal untuk mendirikan klan)`}
+            className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2 font-mono text-xs font-semibold text-slate-200"
+          >
+            <NuenimeCrystalIcon size={13} />
+            <span className="tabular-nums">
+              <span className="min-[430px]:hidden">{formatCompactCrystals(userCrystals)}</span>
+              <span className="hidden min-[430px]:inline">{userCrystals.toLocaleString('id-ID')}</span>
+            </span>
           </div>
+
+          {/* Audio Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-label={soundEnabled ? 'Matikan suara RPG' : 'Aktifkan suara RPG'}
+            title={soundEnabled ? 'Audio RPG Aktif' : 'Audio RPG Bisu'}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all active:scale-95 ${
+              soundEnabled
+                ? 'border-white/15 bg-white/10 text-slate-100'
+                : 'border-white/10 bg-white/[0.04] text-slate-400 hover:text-white'
+            }`}
+          >
+            {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+          </button>
+
+          {/* Guide Button */}
+          <button
+            type="button"
+            onClick={onOpenLegendModal}
+            aria-label="Panduan Eksplorasi Dunia"
+            title="Panduan Peta & Kontrol"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-xs font-bold text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95"
+          >
+            !
+          </button>
         </div>
       </div>
 
-      {/* Row 2: Precision 3-Column Action Bar (Waktu Otomatis Jam Nyata, 7 Bos Kota, Info Dunia) */}
-      <div className="pointer-events-auto grid grid-cols-3 gap-1.5 sm:gap-2">
+      {/* Row 2: Precision 3-Column Action Bar */}
+      <div className="pointer-events-auto grid grid-cols-3 gap-2">
         {/* Real-Time Auto Day/Night Atmosphere */}
         <button
           type="button"
           onClick={cycleTimeOfDay}
           title="Suasana Waktu Otomatis Mengikuti Jam Nyata (Klik untuk mengganti manual)"
-          className="flex h-[36px] items-center justify-center gap-1.5 rounded-xl border border-slate-700/80 bg-[#0B0E14]/95 px-2 text-[11px] font-semibold text-slate-100 shadow-md backdrop-blur-xl transition-all hover:border-sky-400/50 active:scale-95 sm:text-xs"
+          className="flex h-8 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#0B0E14]/95 px-2 text-xs font-semibold text-slate-300 backdrop-blur-xl transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
         >
           {timeOfDay === 'day' && <Sun className="h-3.5 w-3.5 shrink-0 text-amber-300" />}
           {timeOfDay === 'dusk' && <Sunset className="h-3.5 w-3.5 shrink-0 text-orange-400" />}
           {timeOfDay === 'night' && <Moon className="h-3.5 w-3.5 shrink-0 text-purple-300" />}
           <span className="truncate">
             {timeOfDay === 'day' ? 'Siang' : timeOfDay === 'dusk' ? 'Senja' : 'Malam'}
-            <span className="text-[9.5px] text-slate-400 font-normal ml-0.5">(Auto)</span>
+            <span className="text-[10px] text-slate-500 font-normal ml-0.5">(Auto)</span>
           </span>
         </button>
 
@@ -163,7 +158,7 @@ export const WorldHeader: React.FC<WorldHeaderProps> = ({
         <button
           type="button"
           onClick={onCycleWorldBoss}
-          className="flex h-[36px] items-center justify-center gap-1.5 rounded-xl border border-rose-500/40 bg-[#0B0E14]/95 px-2 text-[11px] font-semibold text-rose-100 shadow-md backdrop-blur-xl transition-all hover:border-rose-400 active:scale-95 sm:text-xs"
+          className="flex h-8 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#0B0E14]/95 px-2 text-xs font-semibold text-slate-300 backdrop-blur-xl transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
         >
           <Flame className="h-3.5 w-3.5 shrink-0 text-rose-400" />
           <span className="truncate">7 Bos Kota</span>
@@ -173,9 +168,9 @@ export const WorldHeader: React.FC<WorldHeaderProps> = ({
         <button
           type="button"
           onClick={onOpenWorldInfo}
-          className="flex h-[36px] items-center justify-center gap-1.5 rounded-xl border border-slate-700/80 bg-[#0B0E14]/95 px-2 text-[11px] font-semibold text-slate-100 shadow-md backdrop-blur-xl transition-all hover:border-sky-400/50 active:scale-95 sm:text-xs"
+          className="flex h-8 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#0B0E14]/95 px-2 text-xs font-semibold text-slate-300 backdrop-blur-xl transition-all hover:bg-white/[0.06] hover:text-white active:scale-95"
         >
-          <WorldGlobeIcon size={15} className="shrink-0 text-sky-300" />
+          <WorldGlobeIcon size={14} className="shrink-0 text-sky-400" />
           <span className="truncate">Info Dunia</span>
         </button>
       </div>

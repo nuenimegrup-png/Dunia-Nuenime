@@ -18,6 +18,10 @@ import {
   MapPin,
   ChevronRight,
   HelpCircle,
+  Trash2,
+  UserPlus,
+  AlertTriangle,
+  Clock,
 } from 'lucide-react';
 import { Clan, ClanRoleTitle, WorldCity, BottomNavTab } from '../types/nuenime';
 import { ClanEmblemIcon } from './icons/NuenimeAssets';
@@ -122,13 +126,28 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
     districtInfluence,
     getClanTotalScore,
     activeAccount,
+    clanJoinRequests,
+    respondJoinRequest,
+    disbandClan,
+    transferClanLeadership,
   } = useNuenimeRpg();
 
   // Ambil klan aktif pengguna
   const currentClan = clans.find((c) => c.id === joinedClanId);
 
-  // Modal State Panduan Hierarki Jabatan
+  // Status Otorisasi Pemimpin Klan
+  const isCurrentUserLeader =
+    Boolean(currentClan && (currentClan.leaderId === activeAccount.id || currentClan.founderId === activeAccount.id));
+
+  // Permintaan bergabung yang masuk ke klan ini
+  const incomingRequests = currentClan
+    ? clanJoinRequests.filter((r) => r.clanId === currentClan.id && r.status === 'pending')
+    : [];
+
+  // Modal State
   const [isRoleGuideModalOpen, setIsRoleGuideModalOpen] = useState(false);
+  const [isDisbandModalOpen, setIsDisbandModalOpen] = useState(false);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
   // Form State Pengaturan Profil Klan
   const [name, setName] = useState('');
@@ -381,6 +400,96 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
         </button>
       </form>
 
+      {/* SECTION 1.5: PERMINTAAN BERGABUNG MASUK (KHUSUS PEMIMPIN/PENGELOLA) */}
+      {isCurrentUserLeader && (
+        <div className="mt-3.5 space-y-3 rounded-2xl border border-sky-500/30 bg-[#0B0E14] p-3.5 shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                <UserPlus className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="font-display text-xs font-bold text-white uppercase tracking-wide">
+                  Permintaan Bergabung Masuk
+                </h2>
+                <p className="text-[10px] text-slate-400">
+                  Konfirmasi calon anggota sebelum resmi bergabung ke {currentClan.name}.
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full border border-sky-400/50 bg-sky-950/60 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-200 shrink-0">
+              {incomingRequests.length} Menunggu
+            </span>
+          </div>
+
+          {incomingRequests.length === 0 ? (
+            <div className="py-4 text-center text-xs text-slate-500">
+              Tidak ada permintaan bergabung yang tertunda saat ini.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {incomingRequests.map((req) => (
+                <div
+                  key={req.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-slate-900/90 p-2.5 shadow-sm"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-sky-400/50 bg-slate-800">
+                      {req.avatarUrl ? (
+                        <img
+                          src={req.avatarUrl}
+                          alt={req.displayName || 'Pemohon'}
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-cover rounded-full"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <Shield className="h-4 w-4 text-sky-400" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-bold text-white">
+                        {req.displayName || 'Petualang Nuenime'}
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+                        <span className="font-mono text-[9px] font-bold text-emerald-300">
+                          Lv. {req.level ?? 1}
+                        </span>
+                        <span className="font-mono text-[9px] text-amber-300">
+                          {(req.exp ?? 0).toLocaleString('id-ID')} EXP
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => respondJoinRequest(req.id, 'approve')}
+                      className="flex h-8 items-center gap-1 rounded-lg border border-emerald-500/50 bg-emerald-600/30 px-2.5 text-[11px] font-bold text-emerald-200 hover:bg-emerald-600 hover:text-white active:scale-95 transition-all shadow-sm"
+                    >
+                      <Check className="h-3 w-3 stroke-[3]" />
+                      <span>Terima</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => respondJoinRequest(req.id, 'reject')}
+                      className="flex h-8 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 text-[11px] font-semibold text-rose-300 hover:border-rose-500/50 hover:bg-rose-950/40 active:scale-95 transition-all"
+                    >
+                      <X className="h-3 w-3 stroke-[3]" />
+                      <span>Tolak</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* SECTION 2: DAFTAR ANGGOTA & PEMBERIAN JABATAN */}
       <div className="mt-3.5 space-y-3 rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3.5">
         <div className="border-b border-slate-800/80 pb-2.5">
@@ -557,6 +666,100 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
           })}
         </div>
       </div>
+
+      {/* SECTION 3: PEMBUBARAN KLAN (KHUSUS PEMIMPIN KLAN) */}
+      {isCurrentUserLeader && (
+        <div className="mt-3.5 space-y-3 rounded-2xl border border-rose-500/30 bg-rose-950/15 p-4 shadow-xl">
+          <div className="flex items-center gap-2 text-rose-300">
+            <Trash2 className="h-4 w-4 text-rose-400" />
+            <h3 className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wide">
+              Zona Berbahaya: Pembubaran Klan
+            </h3>
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Membubarkan klan akan mengakhiri keanggotaan seluruh anggota secara otomatis dan aman. Seluruh anggota dapat bergabung ke klan lain setelahnya.
+          </p>
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5 text-[11px] text-slate-400 space-y-1">
+            <p className="text-emerald-300 font-semibold flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5" /> Akun, EXP, level, dan saldo Crystal tidak akan terhapus.
+            </p>
+            <p className="text-slate-300 flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-400" /> Tindakan pembubaran klan tidak dapat dibatalkan melalui aplikasi.
+            </p>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="button"
+              onClick={() => setIsDisbandModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-rose-500/50 bg-rose-600/30 px-3.5 py-2 text-xs font-bold text-rose-200 hover:border-rose-400 hover:bg-rose-600 hover:text-white active:scale-95 transition-all shadow-md"
+            >
+              <Trash2 className="h-3.5 w-3.5 text-rose-300" />
+              <span>Hapus & Bubarkan Klan</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dialog Konfirmasi Pembubaran Klan */}
+      {isDisbandModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-2xl border border-rose-500/50 bg-[#0B0E14] p-4 text-slate-100 shadow-2xl">
+            <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-bold text-white uppercase tracking-wide">
+                  Hapus & Bubarkan Klan
+                </h3>
+                <p className="text-[11px] text-rose-300">{currentClan.name}</p>
+              </div>
+            </div>
+
+            <div className="mt-3.5 space-y-2.5 text-xs text-slate-300 leading-relaxed">
+              <p>
+                Apakah Anda yakin ingin menghapus klan <strong className="text-white">{currentClan.name}</strong>? Semua anggota ({currentClan.memberCount} orang) akan otomatis dikeluarkan dari klan ini. Tindakan ini tidak dapat dibatalkan melalui aplikasi.
+              </p>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-[11px] text-slate-300 space-y-1">
+                <p className="text-emerald-300 font-semibold flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" /> Akun, EXP, dan saldo Crystal anggota tetap aman.
+                </p>
+                <p className="text-sky-300 font-semibold flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" /> Seluruh anggota dapat bergabung dengan klan lain setelahnya.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsDisbandModalOpen(false)}
+                disabled={isSubmittingAction}
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSubmittingAction(true);
+                  const res = await disbandClan(currentClan.id);
+                  setIsSubmittingAction(false);
+                  if (res.ok) {
+                    setIsDisbandModalOpen(false);
+                    onSwitchTab('klan');
+                  }
+                }}
+                disabled={isSubmittingAction}
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-rose-500/50 bg-rose-600 text-xs font-bold text-white hover:bg-rose-500 active:scale-95 transition-all shadow-md"
+              >
+                {isSubmittingAction ? 'Memproses...' : 'Bubarkan Klan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pop-up Modal Panduan Hierarki Jabatan (Clean Dark, Tanpa Emoji) */}
       {isRoleGuideModalOpen && (

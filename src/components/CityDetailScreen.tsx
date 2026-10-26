@@ -522,14 +522,14 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#070d19] text-slate-100">
       {/* Top Dark Glass City Header & Mode Switcher */}
-      <div className="z-30 border-b border-slate-800/80 bg-slate-950/95 px-2.5 pt-2.5 pb-2 backdrop-blur-md">
+      <div className="z-30 border-b border-white/10 bg-[#0B0E14]/95 px-3 pt-3 pb-2.5 backdrop-blur-xl">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={onBackToMap}
-            className="flex min-h-[38px] items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900/85 px-2.5 py-1.5 text-xs font-semibold text-slate-100 transition-colors hover:border-sky-400/50 active:scale-95 whitespace-nowrap shrink-0"
+            className="flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-slate-200 transition-colors hover:bg-white/10 hover:text-white active:scale-95 whitespace-nowrap shrink-0"
           >
-            <ArrowLeft className="h-4 w-4 text-sky-300" />
+            <ArrowLeft className="h-4 w-4 text-slate-400" />
             <span>Peta Dunia</span>
           </button>
 
@@ -538,7 +538,7 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
               type="button"
               onClick={cycleTimeOfDay}
               title="Ubah Siklus Waktu Peta Kota"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-700/80 bg-slate-900 text-slate-200 hover:border-sky-400/50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 transition-colors"
             >
               {timeOfDay === 'day' && <Sun className="h-4 w-4 text-amber-300" />}
               {timeOfDay === 'dusk' && <Sunset className="h-4 w-4 text-orange-300" />}
@@ -547,14 +547,14 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
             <CityEmblemBadge cityId={city.id} material={city.material} size={32} selected />
             <div className="min-w-0 text-right">
               <div className="flex items-center justify-end gap-1.5">
-                <span className="rounded border border-sky-400/50 bg-sky-950 px-1.5 py-0.2 font-mono text-[9.5px] font-bold text-sky-200">
+                <span className="rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 font-mono text-[9.5px] font-semibold text-slate-300">
                   Lv.{city.level} · {city.tier}
                 </span>
-                <h1 className="font-display truncate text-sm font-bold text-white">
+                <h1 className="font-display truncate text-sm font-bold text-white tracking-wide">
                   {city.name}
                 </h1>
               </div>
-              <p className="truncate font-mono text-[10px] text-sky-300 tabular-nums">
+              <p className="truncate font-mono text-[10px] text-slate-400 tabular-nums">
                 Wilayah {city.name} · {city.totalExp.toLocaleString('id-ID')} Total EXP
               </p>
             </div>
@@ -562,30 +562,30 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
         </div>
 
         {/* 3-Tab Mode Bar: Peta Kota | Klan, Bos & Misi | Lore & Riwayat */}
-        <div className="mt-2 grid grid-cols-3 gap-1 rounded-xl border border-slate-800 bg-slate-900/95 p-1">
+        <div className="mt-2.5 grid grid-cols-3 gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
           <button
             type="button"
             onClick={() => setActiveTab('map')}
-            className={`flex h-[34px] items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-semibold transition-all ${
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-all ${
               activeTab === 'map'
-                ? 'border border-sky-400/60 bg-sky-950 text-white shadow-sm'
+                ? 'border border-white/10 bg-white/10 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <MapIcon className="h-3.5 w-3.5 shrink-0 text-sky-300" />
+            <MapIcon className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">Peta Kota</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('clans')}
-            className={`flex h-[34px] items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-semibold transition-all ${
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-all ${
               activeTab === 'clans'
-                ? 'border border-sky-400/60 bg-sky-950 text-white shadow-sm'
+                ? 'border border-white/10 bg-white/10 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Shield className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+            <Shield className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">
               Klan ({city.clans.length}/{city.maxClans})
             </span>
@@ -594,13 +594,13 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('lore')}
-            className={`flex h-[34px] items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-semibold transition-all ${
+            className={`flex h-8 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-all ${
               activeTab === 'lore'
-                ? 'border border-sky-400/60 bg-sky-950 text-white shadow-sm'
+                ? 'border border-white/10 bg-white/10 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <BookOpen className="h-3.5 w-3.5 shrink-0 text-emerald-300" />
+            <BookOpen className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">Lore & EXP</span>
           </button>
         </div>
@@ -824,14 +824,14 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
           />
         ) : (
         <div className="nuenime-scroll flex-1 space-y-3.5 overflow-y-auto px-3.5 py-3.5">
-          {/* Card 1: Status Progres Kota & Pembuatan Klan (Biaya 2.000 Crystal, Bebas Masuk) */}
-          <div className="rounded-2xl border border-sky-400/35 bg-slate-900/85 p-3.5 space-y-2.5">
+          {/* Card 1: Status Progres Kota & Pembuatan Klan */}
+          <div className="rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 sm:p-4 space-y-3 backdrop-blur-xl shadow-xl">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 text-[10px] sm:text-[10.5px] font-semibold text-sky-300">
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-[10.5px] font-semibold text-slate-400">
                   <span className="truncate">Kota Komunitas</span>
                   <span>·</span>
-                  <span className="font-mono text-amber-300 shrink-0">
+                  <span className="font-mono text-slate-300 shrink-0">
                     Lv.{city.level} ({city.tier})
                   </span>
                 </div>
@@ -846,12 +846,12 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
               </div>
 
               <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <span className="rounded-md border border-amber-500/50 bg-[#1f1505] px-2 py-0.5 font-mono text-[10px] font-bold text-amber-300 shrink-0">
+                <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300 shrink-0">
                   {city.clans.length}/{city.maxClans} Klan
                 </span>
                 <div
                   title={`Saldo Crystal: ${userCrystals.toLocaleString('id-ID')}`}
-                  className="flex items-center gap-1.5 rounded-md border border-sky-500/40 bg-[#0c1f38] px-2 py-0.5 font-mono text-[10.5px] font-bold text-sky-200 shrink-0 shadow-sm"
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10.5px] font-semibold text-slate-200 shrink-0"
                 >
                   <NuenimeCrystalIcon size={13} />
                   <span className="tabular-nums">{userCrystals.toLocaleString('id-ID')}</span>
@@ -859,11 +859,11 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
               </div>
             </div>
 
-            {/* City Level & EXP Bar Presisi Mobile (Stacked Vertikal Anti-Tabrakan) */}
+            {/* City Level & EXP Bar Presisi Mobile */}
             <div className="grid grid-cols-2 gap-2">
-              <div className="flex flex-col justify-center rounded-xl border border-sky-500/35 bg-[#0a1829] p-2 sm:p-2.5 min-w-0">
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-300 truncate">
-                  <Shield className="h-3 w-3 shrink-0" />
+              <div className="flex flex-col justify-center rounded-xl border border-white/10 bg-white/[0.03] p-2.5 sm:p-3 min-w-0">
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-400 truncate">
+                  <Shield className="h-3 w-3 shrink-0 text-slate-400" />
                   <span>Tingkat Wilayah</span>
                 </span>
                 <span className="font-mono text-xs sm:text-sm font-bold text-white tabular-nums mt-0.5 truncate">
@@ -871,11 +871,11 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                 </span>
               </div>
 
-              <div className="flex flex-col justify-center rounded-xl border border-emerald-500/35 bg-[#092215] p-2 sm:p-2.5 min-w-0">
-                <span className="text-[10px] font-semibold text-emerald-300 truncate">
+              <div className="flex flex-col justify-center rounded-xl border border-white/10 bg-white/[0.03] p-2.5 sm:p-3 min-w-0">
+                <span className="text-[10px] font-semibold text-slate-400 truncate">
                   Total EXP Wilayah
                 </span>
-                <span className="font-mono text-xs sm:text-sm font-bold text-emerald-300 tabular-nums mt-0.5 truncate">
+                <span className="font-mono text-xs sm:text-sm font-bold text-slate-200 tabular-nums mt-0.5 truncate">
                   {city.totalExp.toLocaleString('id-ID')} EXP
                 </span>
               </div>
@@ -887,20 +887,20 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                   EXP Level {city.level}: {city.currentLevelExp.toLocaleString('id-ID')} /{' '}
                   {city.nextLevelTargetExp.toLocaleString('id-ID')}
                 </span>
-                <span className="font-mono text-sky-300 tabular-nums">
+                <span className="font-mono text-slate-400 tabular-nums">
                   +{remainingExp.toLocaleString('id-ID')} EXP ke Lv.{city.level + 1}
                 </span>
               </div>
-              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                 <div
-                  className="h-full transition-all duration-300"
-                  style={{ width: `${expPercent}%`, backgroundColor: city.accentHex }}
+                  className="h-full rounded-full transition-all duration-300 bg-sky-400"
+                  style={{ width: `${expPercent}%` }}
                 />
               </div>
             </div>
 
-            {/* Create Clan Action / Crystal Fee Notice Solid Color */}
-            <div className="border-t border-slate-800 pt-2.5">
+            {/* Create Clan Action / Crystal Fee Notice */}
+            <div className="border-t border-white/[0.08] pt-2.5">
               {createPermission.allowed ? (
                 <button
                   type="button"
@@ -908,7 +908,7 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                     setCreateClanError(null);
                     setIsCreateClanOpen(true);
                   }}
-                  className="flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-400 bg-[#059669] hover:bg-[#047857] px-3 py-2 text-xs font-bold text-white shadow-md transition-all active:scale-95"
+                  className="flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 px-3 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                 >
                   <PlusCircle className="h-4 w-4 shrink-0" />
                   <span className="inline-flex items-center gap-1">
@@ -918,11 +918,11 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                   </span>
                 </button>
               ) : (
-                <div className="flex flex-col gap-1.5 rounded-xl border border-rose-500/40 bg-[#160a0f] p-2.5 text-[11px]">
+                <div className="flex flex-col gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-[11px]">
                   <div className="text-slate-300 leading-snug">{createPermission.reason}</div>
-                  <div className="flex items-center justify-between text-[10.5px] text-slate-400 pt-1 border-t border-rose-900/40">
+                  <div className="flex items-center justify-between text-[10.5px] text-slate-400 pt-1.5 border-t border-white/[0.06]">
                     <span>Saldo Crystal Anda:</span>
-                    <span className="font-mono font-bold text-amber-300 inline-flex items-center gap-1">
+                    <span className="font-mono font-bold text-slate-200 inline-flex items-center gap-1">
                       <span>{userCrystals.toLocaleString('id-ID')}</span>
                       <NuenimeCrystalIcon size={12} />
                     </span>
@@ -932,29 +932,36 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
             </div>
           </div>
 
-          {/* Card 2: Bos Penjaga Kota Unik (Presisi Mobile & Solid Color Tanpa Gradasi) */}
-          <div className="rounded-2xl border border-rose-500/35 bg-[#140810]/95 p-3 sm:p-3.5 space-y-2.5">
+          {/* Card 2: Bos Penjaga Kota Unik */}
+          <div className="rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 sm:p-4 space-y-3 backdrop-blur-xl shadow-xl">
             {/* Baris Atas: Avatar Bos & Info Lengkap Bos */}
             <div className="flex items-center gap-2.5 min-w-0">
               <div
-                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border bg-slate-950 shadow-sm"
+                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border-2 bg-slate-950 shadow-sm"
                 style={{ borderColor: cityBoss.accentColor }}
               >
                 <CityBossIllustration cityId={city.id} size={38} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 text-[9.5px] font-semibold">
-                  <span className="rounded bg-rose-950 px-1.5 py-0.5 font-mono text-rose-200 border border-rose-400/40 shrink-0">
+                  <span className="rounded bg-white/[0.06] border border-white/10 px-1.5 py-0.5 font-mono text-slate-300 shrink-0">
                     Bos Kota · Lv.{cityBoss.level} ({cityBoss.tier})
                   </span>
-                  <span className="text-emerald-400 font-bold shrink-0">
+                  <span className="flex items-center gap-1 text-[9.5px] text-slate-300 shrink-0">
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        cityBoss.currentHp > 0
+                          ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)]'
+                          : 'bg-emerald-500'
+                      }`}
+                    />
                     {cityBoss.currentHp > 0 ? 'Aktif' : 'Kalah'}
                   </span>
                 </div>
-                <h3 className="font-display truncate text-xs sm:text-sm font-bold text-white mt-0.5">
+                <h3 className="font-display truncate text-xs sm:text-sm font-bold text-white mt-0.5 tracking-wide">
                   {cityBoss.name} — {cityBoss.title}
                 </h3>
-                <div className="font-mono text-[10px] text-rose-300 tabular-nums">
+                <div className="font-mono text-[10px] text-slate-300 tabular-nums">
                   HP Bos: {cityBoss.currentHp.toLocaleString('id-ID')} /{' '}
                   {cityBoss.maxHp.toLocaleString('id-ID')} HP
                 </div>
@@ -962,31 +969,31 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
             </div>
 
             {/* Baris Tengah: Progres Bar HP Bos */}
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-900 border border-slate-800">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
               <div
-                className="h-full bg-[#a855f7] transition-all duration-300"
+                className="h-full rounded-full bg-rose-500 transition-all duration-300"
                 style={{
                   width: `${Math.max(0, Math.min(100, (cityBoss.currentHp / (cityBoss.maxHp || 1)) * 100))}%`,
                 }}
               />
             </div>
 
-            {/* Baris Bawah: Tombol Aksi Simetris 2 Kolom (100% Bebas Tabrakan & Nyaman untuk Jari Mobile) */}
+            {/* Baris Bawah: Tombol Aksi Simetris 2 Kolom */}
             <div className="grid grid-cols-2 gap-2 pt-0.5">
               <button
                 type="button"
                 onClick={() => setIsShopOpen(true)}
                 title="Buka Toko & Gudang Senjata Klan"
-                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-[#241705] hover:bg-[#382307] px-2 text-[11px] font-bold text-amber-300 transition-all active:scale-95"
+                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-2 text-xs font-semibold text-slate-200 transition-all active:scale-95"
               >
-                <Package className="h-3.5 w-3.5 text-amber-300 shrink-0" />
+                <Package className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <span>Gudang</span>
               </button>
 
               {isHomeCity ? (
                 <div
                   title={`Bos ${cityBoss.name} adalah Penjaga Kota ${city.name} tempat klan Anda bermarkas.`}
-                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-[#092215] px-2 text-[11px] font-bold text-emerald-300 shadow-sm"
+                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-2 text-xs font-semibold text-emerald-300 shadow-sm"
                 >
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                   <span>Pelindung</span>
@@ -996,7 +1003,7 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                   type="button"
                   onClick={() => setIsRaidOpen(true)}
                   title="Serang Bos Kota Musuh"
-                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-rose-500 bg-[#e11d48] hover:bg-[#be123c] px-2 text-[11px] font-bold text-white shadow-md shadow-rose-950/50 transition-all active:scale-95"
+                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 px-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                 >
                   <Swords className="h-3.5 w-3.5 shrink-0" />
                   <span>Serang Bos</span>
@@ -1006,7 +1013,7 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                   type="button"
                   onClick={() => resetWorldBoss(cityBoss.id)}
                   title="Bangkitkan Bos Kota"
-                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-sky-400/50 bg-[#0c1f38] hover:bg-[#132c4d] px-2 text-[11px] font-bold text-sky-200 active:scale-95"
+                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-2 text-xs font-semibold text-sky-300 active:scale-95"
                 >
                   <RotateCcw className="h-3.5 w-3.5 shrink-0" />
                   <span>Reset</span>
@@ -1016,14 +1023,14 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
           </div>
 
           {/* Card 3: Alur Perolehan EXP Nyata Terintegrasi Nuenime APK */}
-          <div className="rounded-2xl border border-emerald-500/40 bg-slate-900/90 p-3.5 space-y-3 shadow-lg">
+          <div className="rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 sm:p-4 space-y-3 backdrop-blur-xl shadow-xl">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h3 className="font-display text-xs font-bold text-emerald-300">
+                  <h3 className="font-display text-xs font-bold text-white tracking-wide">
                     Alur Perolehan EXP Nyata ({city.name})
                   </h3>
-                  <span className="rounded border border-emerald-500/60 bg-emerald-950/90 px-1.5 py-0.2 font-mono text-[9px] font-bold text-emerald-300 flex items-center gap-1">
+                  <span className="rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 font-mono text-[9px] font-semibold text-slate-300 flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     REALTIME APK
                   </span>
@@ -1034,16 +1041,16 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
               </div>
             </div>
 
-            {/* Banner Sinkronisasi EXP Akun Real (Responsif Mobile) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-3">
+            {/* Banner Sinkronisasi EXP Akun Real */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border border-white/10 bg-white/[0.03] p-3">
               <div className="min-w-0">
-                <div className="text-[10px] text-emerald-300 font-semibold uppercase tracking-wider">
+                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                   Kontribusi EXP Akun Anda
                 </div>
                 <div className="font-mono text-base font-bold text-white mt-0.5 tabular-nums">
-                  {playerContribution.toLocaleString('id-ID')} <span className="text-xs font-normal text-emerald-300">EXP Terkumpul</span>
+                  {playerContribution.toLocaleString('id-ID')} <span className="text-xs font-normal text-slate-400">EXP Terkumpul</span>
                 </div>
-                <div className="text-[10px] text-slate-400">
+                <div className="text-[10px] text-slate-500">
                   Tersinkronisasi otomatis dengan profil akun Nuenime
                 </div>
               </div>
@@ -1052,9 +1059,9 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                 type="button"
                 onClick={handleSyncExp}
                 disabled={isSyncingExp}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-400/60 bg-emerald-600/30 px-3 py-2 text-xs font-bold text-emerald-100 hover:bg-emerald-600/50 active:scale-95 transition-all shrink-0 disabled:opacity-50 w-full sm:w-auto"
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] hover:bg-white/[0.1] px-3.5 py-2 text-xs font-semibold text-slate-200 active:scale-95 transition-all shrink-0 disabled:opacity-50 w-full sm:w-auto"
               >
-                <RefreshCw className={`h-3.5 w-3.5 text-emerald-300 ${isSyncingExp ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-3.5 w-3.5 text-slate-300 ${isSyncingExp ? 'animate-spin' : ''}`} />
                 <span>{isSyncingExp ? 'Sinkron...' : 'Sinkronkan EXP'}</span>
               </button>
             </div>
@@ -1068,18 +1075,18 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
               {cityMissions.map((msn) => (
                 <div
                   key={msn.id}
-                  className="flex items-center justify-between gap-2.5 rounded-xl border border-slate-800 bg-slate-950/80 p-2.5"
+                  className="flex items-center justify-between gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-sky-300">
-                      <span className="rounded bg-emerald-950/80 border border-emerald-500/40 px-1.5 py-0.2 font-mono text-[9px] text-emerald-300">
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400">
+                      <span className="rounded bg-white/[0.06] border border-white/10 px-1.5 py-0.2 font-mono text-[9px] text-slate-300">
                         Aktivitas APK
                       </span>
                       <span>{msn.categoryLabel}</span>
                       <span aria-hidden="true">·</span>
-                      <span className="text-slate-400">{msn.difficulty}</span>
+                      <span className="text-slate-500">{msn.difficulty}</span>
                     </div>
-                    <div className="font-display text-xs font-bold text-white truncate mt-0.5">
+                    <div className="font-display text-xs font-bold text-white truncate mt-0.5 tracking-wide">
                       {msn.title}
                     </div>
                     <p className="mt-0.5 text-[10.5px] text-slate-400 line-clamp-1">
@@ -1087,11 +1094,11 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                     </p>
                   </div>
 
-                  <div className="flex flex-col items-end justify-center rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-3 py-1.5 text-right shrink-0">
-                    <span className="font-mono text-xs font-bold text-emerald-300 tabular-nums">
+                  <div className="flex flex-col items-end justify-center rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 text-right shrink-0">
+                    <span className="font-mono text-xs font-bold text-slate-200 tabular-nums">
                       +{msn.rewardExp} EXP
                     </span>
-                    <span className="text-[9.5px] text-slate-400">
+                    <span className="text-[9.5px] text-slate-500">
                       Otomatis via APK
                     </span>
                   </div>
@@ -1109,28 +1116,28 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={`Cari klan di leaderboard ${city.name}...`}
-                className="h-10 w-full rounded-xl border border-slate-800 bg-slate-900/85 pl-9 pr-3 text-xs text-slate-100 placeholder-slate-500 focus:border-sky-400/60 focus:outline-none"
+                className="h-10 w-full rounded-xl border border-white/10 bg-[#0B0E14]/90 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:border-white/20 focus:outline-none backdrop-blur-xl"
               />
             </div>
 
             <button
               type="button"
               onClick={() => onOpenFullClanList(city)}
-              className="flex h-10 items-center gap-1 rounded-xl border border-slate-700/80 bg-slate-900/80 px-3 text-xs font-medium text-sky-300 hover:border-sky-400/50 whitespace-nowrap shrink-0"
+              className="flex h-10 items-center gap-1.5 rounded-xl border border-white/10 bg-[#0B0E14]/90 px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-all shrink-0 backdrop-blur-xl"
             >
               <Trophy className="h-3.5 w-3.5 text-amber-300" />
               <span>Global</span>
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
             </button>
           </div>
 
           {/* Leaderboard Klan Dalam Kota */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-              <span>
+              <span className="font-bold text-white tracking-wide">
                 Leaderboard Klan Kota {city.name} ({filteredClans.length}/{city.maxClans})
               </span>
-              <span className="text-[10.5px] text-slate-400">Urut berdasarkan Total EXP</span>
+              <span className="text-[11px] text-slate-500 font-normal">Urut berdasarkan Total EXP</span>
             </div>
 
             {filteredClans.map((clan, index) => {
@@ -1142,22 +1149,22 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
               return (
                 <div
                   key={clan.id}
-                  className={`flex flex-col gap-2.5 rounded-2xl border p-3 ${
+                  className={`flex flex-col gap-2.5 rounded-2xl border p-3.5 backdrop-blur-xl ${
                     isJoined
-                      ? 'border-emerald-400/50 bg-slate-900/90'
-                      : 'border-slate-800/90 bg-slate-900/75'
+                      ? 'border-white/25 bg-[#0B0E14]/95 shadow-md'
+                      : 'border-white/10 bg-[#0B0E14]/90'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <div
                       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold tabular-nums ${
                         rank === 1
-                          ? 'border border-amber-400/60 bg-amber-500/25 text-amber-200'
+                          ? 'border border-amber-400/40 bg-amber-500/15 text-amber-200'
                           : rank === 2
-                          ? 'border border-slate-300/50 bg-slate-400/20 text-slate-100'
+                          ? 'border border-slate-400/30 bg-slate-400/10 text-slate-200'
                           : rank === 3
-                          ? 'border border-orange-400/50 bg-orange-500/20 text-orange-200'
-                          : 'bg-slate-800 text-slate-400'
+                          ? 'border border-orange-400/30 bg-orange-500/10 text-orange-200'
+                          : 'border border-white/5 bg-white/[0.03] text-slate-400'
                       }`}
                     >
                       #{rank}
@@ -1167,32 +1174,31 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                       variant={clan.emblemVariant}
                       accentColor={clan.accentColor}
                       logoUrl={clan.logoUrl}
-                      size={44}
+                      size={42}
                       className="shrink-0"
                     />
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-display truncate text-sm font-bold text-white">
+                        <h3 className="font-display truncate text-sm font-bold text-white tracking-wide">
                           {clan.name}{' '}
-                          <span className="font-mono text-[10.5px] text-sky-300">[{clan.tag}]</span>
+                          <span className="font-mono text-[10.5px] text-slate-400">[{clan.tag}]</span>
                         </h3>
-                        <span className="font-mono text-[11.5px] font-bold text-amber-300 tabular-nums shrink-0">
+                        <span className="font-mono text-xs font-bold text-slate-200 tabular-nums shrink-0">
                           {totalScore.toLocaleString('id-ID')} EXP
                         </span>
                       </div>
-                      <p className="mt-0.5 line-clamp-1 text-[11px] text-slate-300">
+                      <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">
                         Pemimpin: {clan.leaderName} · Anggota: {clan.memberCount}/{clan.maxMembers}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-800/80 pt-2 text-[11px] text-slate-400">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-white/[0.06] pt-2 text-xs text-slate-400">
                     <div className="truncate">
-                      <span className="text-slate-200 font-medium">{clan.strongholdDistrict}</span>
-                      <span className="font-mono text-sky-300 tabular-nums">
-                        {' '}
-                        · Kendali {influence}%
+                      <span className="text-slate-300 font-medium">{clan.strongholdDistrict}</span>
+                      <span className="font-mono text-slate-400 tabular-nums">
+                        {' '}· Kendali {influence}%
                       </span>
                     </div>
 
@@ -1200,13 +1206,13 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                       {!isJoined ? (
                         <button
                           type="button"
-                          onClick={() => joinClan(clan.id)}
-                          className="flex items-center justify-center rounded-lg border border-emerald-400/50 bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold text-emerald-200 hover:bg-emerald-500/25 active:scale-95"
+                          onClick={() => onSelectClan(clan)}
+                          className="flex h-8 items-center justify-center rounded-lg bg-sky-600 hover:bg-sky-500 px-3 text-xs font-bold text-white active:scale-95 transition-all shadow-sm"
                         >
                           Gabung
                         </button>
                       ) : (
-                        <div className="flex items-center justify-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-2 py-1 text-[11px] font-semibold text-emerald-300">
+                        <div className="flex h-8 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-emerald-300">
                           <Award className="h-3 w-3 shrink-0" />
                           <span>Klanmu</span>
                         </div>
@@ -1219,14 +1225,14 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                           setActiveTab('map');
                           setTimeout(() => focusClanStronghold(clan), 50);
                         }}
-                        className="flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/90 px-2 py-1 text-[11px] font-medium text-sky-300 hover:border-sky-400/50 active:scale-95"
+                        className="flex h-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-2.5 text-xs font-medium text-slate-300 active:scale-95 transition-colors"
                       >
                         Peta
                       </button>
                       <button
                         type="button"
                         onClick={() => onSelectClan(clan)}
-                        className="flex items-center justify-center rounded-lg border border-sky-400/50 bg-[#0c1f38] hover:bg-[#132c4d] px-2 py-1 text-[11px] font-semibold text-white active:scale-95"
+                        className="flex h-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 text-xs font-semibold text-slate-200 active:scale-95 transition-colors"
                       >
                         Detail
                       </button>
@@ -1237,10 +1243,10 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
             })}
 
             {filteredClans.length === 0 && (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 px-4 py-8 text-center">
-                <Shield className="h-10 w-10 text-slate-600 mb-2" />
-                <p className="text-xs font-semibold text-slate-300">Belum Ada Klan di Kota {city.name}</p>
-                <p className="text-[11px] text-slate-500 mt-1 max-w-xs">
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-[#0B0E14]/90 px-4 py-8 text-center backdrop-blur-xl shadow-xl">
+                <Shield className="h-10 w-10 text-slate-500 mb-2.5" />
+                <p className="text-sm font-bold text-white tracking-tight">Belum Ada Klan di Kota {city.name}</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
                   Seluruh klan di kota ini berasal dari hasil pembuatan klan oleh para petualang. Jadilah pendiri klan pertama!
                 </p>
                 <button
@@ -1249,7 +1255,7 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                     setCreateClanError(null);
                     setIsCreateClanOpen(true);
                   }}
-                  className="mt-3.5 inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/50 bg-emerald-700/80 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-600 active:scale-95 transition-all shadow-md"
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 px-4 py-2.5 text-xs font-bold text-white active:scale-95 transition-all shadow-sm"
                 >
                   <PlusCircle className="h-4 w-4" />
                   <span>Dirikan Klan Pertama di {city.name}</span>
@@ -1265,39 +1271,41 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
          ===================================================================== */}
       {activeTab === 'lore' && (
         <div className="nuenime-scroll flex-1 space-y-3.5 overflow-y-auto px-3.5 py-3.5">
-          <div className="relative h-40 w-full overflow-hidden rounded-2xl border border-slate-800">
+          <div className="relative h-44 w-full overflow-hidden rounded-2xl border border-white/10 shadow-lg">
             <img
               src={city.thumbnailAsset}
               alt={`Ilustrasi ${city.name}`}
               referrerPolicy="no-referrer"
               className="h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent" />
-            <div className="absolute bottom-3 left-3.5 right-3.5">
-              <div className="text-[11px] font-medium text-sky-300">
-                {city.regionName} · Level {city.level} ({city.tier})
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/60 to-transparent" />
+            <div className="absolute bottom-3.5 left-4 right-4">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/40 border border-white/10 backdrop-blur-md text-[10.5px] font-medium text-slate-300 font-mono mb-1.5">
+                <span>{city.regionName}</span>
+                <span className="text-slate-500">·</span>
+                <span className="text-sky-300">Level {city.level} ({city.tier})</span>
               </div>
-              <h2 className="font-display text-xl font-bold text-white">{city.name}</h2>
-              <p className="text-xs text-slate-300">{city.epithet}</p>
+              <h2 className="font-display text-xl font-bold tracking-wide text-white">{city.name}</h2>
+              <p className="text-xs text-slate-300/90">{city.epithet}</p>
             </div>
           </div>
 
           {/* Riwayat Kenaikan Level & Tier Kota */}
-          <div className="rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3.5 space-y-2.5">
+          <div className="rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 sm:p-4 backdrop-blur-xl shadow-xl space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <History className="h-4 w-4 text-amber-300" />
-                <h3 className="font-display text-sm font-bold text-white">
+                <History className="h-4 w-4 text-slate-400" />
+                <h3 className="font-display text-sm font-bold tracking-wide text-slate-100">
                   Riwayat Progres Level & Tier {city.name}
                 </h3>
               </div>
-              <span className="font-mono text-[11px] text-sky-300">
+              <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-slate-300">
                 {city.levelHistory.length} Catatan
               </span>
             </div>
 
             {city.levelHistory.length === 0 ? (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs leading-relaxed text-slate-400">
                 Kota {city.name} saat ini berada di Level 1 ({city.tier}). Jalankan misi simulasi klan untuk menaikkan level dan tier kota!
               </p>
             ) : (
@@ -1305,17 +1313,17 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                 {city.levelHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/80 px-3 py-2 text-xs"
+                    className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5 text-xs hover:border-white/10 transition-colors"
                   >
                     <div>
-                      <div className="font-bold text-amber-300">
+                      <div className="font-semibold text-slate-200">
                         Naik dari Lv.{item.previousLevel} ke Lv.{item.newLevel} ({item.newTier})
                       </div>
                       <div className="text-[10.5px] text-slate-400">
                         Total EXP Kota: {item.totalExpAtUpgrade.toLocaleString('id-ID')} EXP
                       </div>
                     </div>
-                    <span className="font-mono text-[10px] text-slate-400">
+                    <span className="font-mono text-[10px] text-slate-500">
                       {new Date(item.timestamp).toLocaleTimeString('id-ID', {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -1328,28 +1336,28 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
           </div>
 
           {/* Buku Besar Transaksi EXP Kota */}
-          <div className="rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3.5 space-y-2.5">
+          <div className="rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 sm:p-4 backdrop-blur-xl shadow-xl space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-sm font-bold text-white">
+              <h3 className="font-display text-sm font-bold tracking-wide text-slate-100">
                 Buku Besar Kontribusi EXP Kota
               </h3>
-              <span className="rounded bg-amber-950/90 px-2 py-0.5 font-mono text-[9.5px] text-amber-300 border border-amber-400/40">
+              <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[9.5px] font-medium text-slate-400 tracking-wider">
                 SUMBER: SIMULASI
               </span>
             </div>
 
             {cityExpLogs.length === 0 ? (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs leading-relaxed text-slate-400">
                 Belum ada transaksi EXP simulasi baru pada sesi ini. Total EXP awal kota berasal dari akumulasi kontribusi klan ({city.totalExp.toLocaleString('id-ID')} EXP).
               </p>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {cityExpLogs.map((tx) => (
                   <div
                     key={tx.id}
-                    className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/75 px-2.5 py-2 text-[11px]"
+                    className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5 text-[11px] hover:border-white/10 transition-colors"
                   >
-                    <div className="min-w-0">
+                    <div className="min-w-0 pr-2">
                       <div className="font-semibold text-white truncate">
                         {tx.userName} → {tx.clanName}
                       </div>
@@ -1357,7 +1365,7 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                         {tx.missionTitle} ({tx.source})
                       </div>
                     </div>
-                    <span className="font-mono font-bold text-emerald-300 tabular-nums shrink-0">
+                    <span className="font-mono font-bold text-sky-400 tabular-nums shrink-0">
                       +{tx.expAmount} EXP
                     </span>
                   </div>
@@ -1367,30 +1375,30 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
           </div>
 
           {/* Lore & Sejarah Peradaban Kota */}
-          <div className="rounded-2xl border border-slate-800/90 bg-slate-900/75 p-3.5 space-y-2.5">
-            <h3 className="font-display text-sm font-bold text-white">
+          <div className="rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 sm:p-4 backdrop-blur-xl shadow-xl space-y-3">
+            <h3 className="font-display text-sm font-bold tracking-wide text-slate-100">
               Sejarah & Peradaban {city.name}
             </h3>
-            <p className="text-xs leading-relaxed text-slate-300">{city.fullLore}</p>
+            <p className="text-xs leading-relaxed text-slate-300/90">{city.fullLore}</p>
 
-            <div className="space-y-2 border-t border-slate-800 pt-2.5 text-xs">
-              <div className="flex items-start gap-2">
-                <Compass className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
-                <div>
+            <div className="space-y-2 pt-2 border-t border-white/5">
+              <div className="flex items-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <Compass className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <div className="text-xs leading-relaxed">
                   <span className="font-semibold text-slate-200">Geografi Kota: </span>
                   <span className="text-slate-400">{city.geographyNote}</span>
                 </div>
               </div>
-              <div className="flex items-start gap-2">
-                <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-                <div>
+              <div className="flex items-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <div className="text-xs leading-relaxed">
                   <span className="font-semibold text-slate-200">Fenomena Sihir: </span>
                   <span className="text-slate-400">{city.magicPhenomenon}</span>
                 </div>
               </div>
-              <div className="flex items-start gap-2">
-                <Users className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-                <div>
+              <div className="flex items-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <Users className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <div className="text-xs leading-relaxed">
                   <span className="font-semibold text-slate-200">Dewan Penguasa: </span>
                   <span className="text-slate-400">{city.rulingCouncil}</span>
                 </div>
@@ -1403,62 +1411,62 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
       {/* Modal Buat Klan Baru (Khusus Pemimpin Kota, Maks 15 Klan/Kota) */}
       {isCreateClanOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
           onClick={() => setIsCreateClanOpen(false)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="nuenime-scroll max-h-[85vh] w-full max-w-[390px] overflow-y-auto rounded-2xl border border-slate-500/40 bg-slate-950/95 p-4 text-slate-100 shadow-2xl"
+            className="nuenime-scroll max-h-[88vh] w-full max-w-[400px] overflow-y-auto rounded-2xl border border-white/10 bg-[#0B0E14]/98 p-4 sm:p-5 text-slate-100 shadow-2xl backdrop-blur-2xl"
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
-                <h3 className="font-display text-sm font-bold text-white">
+                <h3 className="font-display text-sm font-bold tracking-wide text-white">
                   Buat Klan Baru di Kota {city.name}
                 </h3>
-                <p className="text-[11px] text-slate-400">
-                  Kapasitas Kota: {city.clans.length} / {city.maxClans} Klan · Maks 100 Anggota/Klan
+                <p className="mt-0.5 font-mono text-[11px] text-slate-400">
+                  Kapasitas: {city.clans.length} / {city.maxClans} Klan · Maks 100 Jiwa
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreateClanOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-300"
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors active:scale-95"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateClanSubmit} className="mt-3 space-y-3 text-xs">
-              {/* Kartu Biaya Crystal Pendirian Klan (Solid Color & Nuenime Crystal Icon) */}
-              <div className="flex items-center justify-between rounded-xl border border-sky-500/40 bg-[#0a1829] p-2.5">
+            <form onSubmit={handleCreateClanSubmit} className="mt-3.5 space-y-3.5 text-xs">
+              {/* Kartu Biaya Crystal Pendirian Klan */}
+              <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3">
                 <div className="flex items-center gap-2.5">
-                  <NuenimeCrystalIcon size={22} />
+                  <NuenimeCrystalIcon size={20} />
                   <div>
-                    <div className="text-xs font-bold text-sky-200">Biaya Pendirian Klan</div>
-                    <div className="text-[10.5px] text-slate-300">2.000 Crystal Nuenime</div>
+                    <div className="text-xs font-semibold text-slate-200">Biaya Pendirian Klan</div>
+                    <div className="text-[10.5px] text-slate-400">2.000 Crystal Nuenime</div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] text-slate-400">Saldo Crystal Anda</div>
                   <div
                     className={`font-mono text-xs font-bold inline-flex items-center gap-1 justify-end ${
-                      userCrystals >= 2000 ? 'text-emerald-300' : 'text-rose-400'
+                      userCrystals >= 2000 ? 'text-sky-400' : 'text-rose-400'
                     }`}
                   >
                     <span>{userCrystals.toLocaleString('id-ID')}</span>
-                    <NuenimeCrystalIcon size={13} />
+                    <NuenimeCrystalIcon size={12} />
                   </div>
                 </div>
               </div>
 
               {createClanError && (
-                <div className="rounded-xl border border-rose-500/50 bg-[#1f0a10] p-2.5 text-rose-200">
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
                   {createClanError}
                 </div>
               )}
 
               <div>
-                <label className="mb-1 block font-semibold text-slate-300">
+                <label className="mb-1.5 block font-medium text-slate-300">
                   Nama Klan (3–36 Karakter)
                 </label>
                 <input
@@ -1467,13 +1475,13 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                   value={newClanName}
                   onChange={(e) => setNewClanName(e.target.value)}
                   placeholder="Contoh: Ordo Bintang Utara"
-                  className="h-10 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-xs text-white focus:border-sky-400 focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs text-white placeholder-slate-500 focus:border-sky-400/60 focus:bg-white/[0.05] focus:outline-none transition-colors"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="mb-1 block font-semibold text-slate-300">
+                  <label className="mb-1.5 block font-medium text-slate-300">
                     Tag Klan (2–5 Huruf)
                   </label>
                   <input
@@ -1482,19 +1490,19 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                     value={newClanTag}
                     onChange={(e) => setNewClanTag(e.target.value.toUpperCase())}
                     placeholder="OBU"
-                    className="h-10 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 font-mono text-xs uppercase text-white focus:border-sky-400 focus:outline-none"
+                    className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 font-mono text-xs uppercase text-white placeholder-slate-500 focus:border-sky-400/60 focus:bg-white/[0.05] focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block font-semibold text-slate-300">Emblem Klan</label>
+                  <label className="mb-1.5 block font-medium text-slate-300">Emblem Klan</label>
                   <select
                     value={newClanEmblem}
                     onChange={(e) => setNewClanEmblem(e.target.value as ClanEmblemVariant)}
-                    className="h-10 w-full rounded-xl border border-slate-700 bg-slate-900 px-2.5 text-xs text-white focus:border-sky-400 focus:outline-none"
+                    className="h-10 w-full rounded-xl border border-white/10 bg-[#0E121B] px-2.5 text-xs text-white focus:border-sky-400/60 focus:outline-none transition-colors"
                   >
                     {EMBLEM_VARIANTS.map((em) => (
-                      <option key={em.id} value={em.id}>
+                      <option key={em.id} value={em.id} className="bg-[#0E121B] text-white">
                         {em.label}
                       </option>
                     ))}
@@ -1504,8 +1512,8 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
 
               {/* Input Link Foto / Logo Bulat Klan */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block font-semibold text-slate-300">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-medium text-slate-300">
                     Link Foto / Logo Bulat Klan
                   </label>
                   <span className="text-[10px] text-slate-400 font-normal">
@@ -1513,7 +1521,7 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-700 bg-slate-900">
+                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/40">
                     {newClanLogoUrl.trim() ? (
                       <img
                         src={newClanLogoUrl.trim()}
@@ -1528,7 +1536,7 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                       <ClanEmblemIcon
                         variant={newClanEmblem}
                         accentColor={city.accentHex}
-                        size={24}
+                        size={22}
                       />
                     )}
                   </div>
@@ -1537,25 +1545,25 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                     value={newClanLogoUrl}
                     onChange={(e) => setNewClanLogoUrl(e.target.value)}
                     placeholder="https://contoh.com/logo-klan.png"
-                    className="h-10 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 text-xs text-white placeholder-slate-500 focus:border-sky-400 focus:outline-none"
+                    className="h-10 flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs text-white placeholder-slate-500 focus:border-sky-400/60 focus:bg-white/[0.05] focus:outline-none transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block font-semibold text-slate-300">
+                <label className="mb-1.5 block font-medium text-slate-300">
                   Distrik Markas di {city.name}
                 </label>
                 <input
                   type="text"
                   value={newClanDistrict}
                   onChange={(e) => setNewClanDistrict(e.target.value)}
-                  className="h-10 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-xs text-white focus:border-sky-400 focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs text-white placeholder-slate-500 focus:border-sky-400/60 focus:bg-white/[0.05] focus:outline-none transition-colors"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block font-semibold text-slate-300">
+                <label className="mb-1.5 block font-medium text-slate-300">
                   Deskripsi Singkat Klan
                 </label>
                 <textarea
@@ -1563,14 +1571,14 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
                   value={newClanDesc}
                   onChange={(e) => setNewClanDesc(e.target.value)}
                   placeholder={`Klan penjaga kehormatan Kota ${city.name}...`}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 p-2.5 text-xs text-white focus:border-sky-400 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white placeholder-slate-500 focus:border-sky-400/60 focus:bg-white/[0.05] focus:outline-none transition-colors"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmittingClan}
-                className="flex min-h-[42px] w-full items-center justify-center gap-2 rounded-xl border border-sky-400 bg-[#0284c7] hover:bg-[#0369a1] px-4 py-2 text-xs font-bold text-white shadow-lg transition-all active:scale-95 disabled:opacity-50"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-500 px-4 text-xs font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
                 <PlusCircle className="h-4 w-4 shrink-0" />
                 <span>

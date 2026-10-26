@@ -29,6 +29,7 @@ import {
   ClanInventoryItem,
   ClanCoinTransaction,
   BossBattleLog,
+  ClanJoinRequest,
 } from '../types/nuenime';
 import { WORLD_CITIES as SEED_WORLD_CITIES } from '../data/nuenimeWorldData';
 import {
@@ -324,6 +325,31 @@ interface NuenimeRpgContextValue {
   ) => { ok: boolean; message: string };
   joinedClanId: string | null;
   joinClan: (clanId: string) => { ok: boolean; message: string };
+  clanJoinRequests: ClanJoinRequest[];
+  requestJoinClan: (clanId: string) => Promise<{
+    ok: boolean;
+    message: string;
+    requiresLeaveFirst?: boolean;
+    currentClanName?: string;
+  }>;
+  respondJoinRequest: (
+    requestId: string,
+    action: 'approve' | 'reject'
+  ) => Promise<{ ok: boolean; message: string }>;
+  cancelJoinRequest: (clanId: string) => Promise<{ ok: boolean; message: string }>;
+  leaveClan: (clanId: string) => Promise<{
+    ok: boolean;
+    message: string;
+    isLeader?: boolean;
+    hasOtherMembers?: boolean;
+  }>;
+  disbandClan: (clanId: string) => Promise<{ ok: boolean; message: string }>;
+  transferClanLeadership: (
+    clanId: string,
+    newLeaderId: string
+  ) => Promise<{ ok: boolean; message: string }>;
+  getUserJoinRequest: (clanId: string) => ClanJoinRequest | undefined;
+  refreshClanData: () => Promise<void>;
 
   // Unique City Bosses (7 Bosses) & Serangan Bos Kota Musuh
   worldBosses: CityBossRecord[];
@@ -420,6 +446,7 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [clanInventory, setClanInventory] = useState<ClanInventoryItem[]>([]);
   const [clanCoinTransactions, setClanCoinTransactions] = useState<ClanCoinTransaction[]>([]);
   const [bossBattleLogs, setBossBattleLogs] = useState<BossBattleLog[]>([]);
+  const [clanJoinRequests, setClanJoinRequests] = useState<ClanJoinRequest[]>([]);
 
   // Idempotency lock set to prevent duplicate clan creations or duplicate mission claims
   const processedRequestKeysRef = useRef<Set<string>>(new Set());
@@ -759,8 +786,9 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           { data: dbInventory },
           { data: dbCoinTx },
           { data: dbBattleLogs },
+          { data: dbRequests },
         ] = await Promise.all([
-          supabase.from('rpg_clans').select('*, members:rpg_clan_members(*)'),
+          supabase.from('rpg_clans').select('*, members:rpg_clan_members(*)').neq('status', 'disbanded'),
           supabase.from('rpg_cities').select('*'),
           supabase.from('rpg_city_bosses').select('*'),
           supabase.from('profiles').select('id, exp, level').eq('id', activeAccount.id).maybeSingle(),
@@ -769,6 +797,7 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           supabase.from('rpg_clan_inventory').select('*, weapon:rpg_weapons_catalog(*)'),
           supabase.from('rpg_clan_coin_transactions').select('*').order('created_at', { ascending: false }).limit(40),
           supabase.from('rpg_boss_battle_logs').select('*').order('created_at', { ascending: false }).limit(30),
+          supabase.from('rpg_clan_join_requests').select('*').in('status', ['pending', 'approved', 'rejected']).order('created_at', { ascending: false }),
         ]);
 
         if (isMounted) {
@@ -855,6 +884,26 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             );
           }
 
+          if (dbRequests) {
+            setClanJoinRequests(
+              dbRequests.map((r: any) => ({
+                id: r.id,
+                clanId: r.clan_id,
+                userId: r.user_id,
+                status: r.status,
+                reviewedBy: r.reviewed_by,
+                reviewedAt: r.reviewed_at,
+                createdAt: r.created_at,
+                displayName: r.display_name,
+                avatarUrl: r.avatar_url,
+                borderUrl: r.border_url,
+                level: Number(r.level) || 1,
+                exp: Number(r.exp) || 0,
+                rank: r.rank || 'STONE',
+              }))
+            );
+          }
+
           setRepo((prev) => {
             const realUserExp =
               dbProfile?.exp != null
@@ -871,7 +920,10 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               );
 
               const formattedClans: Clan[] = matchedClans.map((c: any) => {
-                const members: ClanMember[] = (c.members || []).map((m: any) => {
+                const activeMembersOnly = (c.members || []).filter(
+                  (m: any) => m.status === 'active' || m.status === 'ACTIVE' || !m.status
+                );
+                const members: ClanMember[] = activeMembersOnly.map((m: any) => {
                   const isCurrentUser = m.user_id === activeAccount.id;
                   const effectiveScore = isCurrentUser
                     ? Math.max(Number(m.contribution_score) || 0, realUserExp)
@@ -1032,17 +1084,19 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                 })
               : prev.cityBosses;
 
-            // 3. Deteksi Keanggotaan Klan Pengguna Murni dari Database (Filter klan testing)
+            // 3. Deteksi Keanggotaan Klan Pengguna Murni dari Database (Filter klan testing & disbanded)
             const userClan = (dbClans || [])
-              .filter((c: any) => !isTestingClan(c))
+              .filter((c: any) => !isTestingClan(c) && c.status !== 'disbanded')
               .find((c: any) =>
-                (c.members || []).some((m: any) => m.user_id === activeAccount.id) ||
-                c.leader_id === activeAccount.id
+                (c.members || []).some(
+                  (m: any) =>
+                    m.user_id === activeAccount.id &&
+                    (m.status === 'active' || m.status === 'ACTIVE' || !m.status)
+                ) ||
+                (c.leader_id === activeAccount.id && c.status !== 'disbanded')
               );
             const resolvedJoinedClanId = userClan
               ? userClan.id
-              : prev.joinedClanId && !TEST_CLAN_IDS.has(prev.joinedClanId)
-              ? prev.joinedClanId
               : null;
 
             const reconciled = verifyAndReconcileWorldCities(nextCities, nextBosses);
@@ -1429,97 +1483,433 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
    * - Jumlah anggota tidak melebihi 100.
    * - Jumlah anggota konsisten dengan array members sebenarnya.
    */
-  const joinClan = useCallback(
-    (clanId: string): { ok: boolean; message: string } => {
+  /**
+   * 4. SISTEM PERMINTAAN BERGABUNG, KELUAR, DISBAND, & TRANSFER KLAN
+   */
+  const getUserJoinRequest = useCallback(
+    (clanId: string): ClanJoinRequest | undefined => {
+      return clanJoinRequests.find(
+        (r) => r.clanId === clanId && r.userId === activeAccount.id && r.status === 'pending'
+      );
+    },
+    [clanJoinRequests, activeAccount.id]
+  );
+
+  const refreshClanData = useCallback(async () => {
+    try {
+      const [
+        { data: dbClans },
+        { data: dbRequests },
+        { data: dbMembers },
+      ] = await Promise.all([
+        supabase.from('rpg_clans').select('*, members:rpg_clan_members(*)').neq('status', 'disbanded'),
+        supabase.from('rpg_clan_join_requests').select('*').in('status', ['pending', 'approved', 'rejected']).order('created_at', { ascending: false }),
+        supabase.from('rpg_clan_members').select('*').eq('status', 'active'),
+      ]);
+
+      if (dbRequests) {
+        setClanJoinRequests(
+          dbRequests.map((r: any) => ({
+            id: r.id,
+            clanId: r.clan_id,
+            userId: r.user_id,
+            status: r.status,
+            reviewedBy: r.reviewed_by,
+            reviewedAt: r.reviewed_at,
+            createdAt: r.created_at,
+            displayName: r.display_name,
+            avatarUrl: r.avatar_url,
+            borderUrl: r.border_url,
+            level: Number(r.level) || 1,
+            exp: Number(r.exp) || 0,
+            rank: r.rank || 'STONE',
+          }))
+        );
+      }
+
+      if (dbMembers) {
+        const activeUserMembership = dbMembers.find((m: any) => m.user_id === activeAccount.id);
+        if (activeUserMembership) {
+          setRepo((prev) => ({
+            ...prev,
+            joinedClanId: activeUserMembership.clan_id,
+          }));
+        } else {
+          setRepo((prev) => ({
+            ...prev,
+            joinedClanId: null,
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('[Dunia Nuenime] Gagal refreshClanData:', err);
+    }
+  }, [activeAccount.id]);
+
+  const requestJoinClan = useCallback(
+    async (
+      clanId: string
+    ): Promise<{
+      ok: boolean;
+      message: string;
+      requiresLeaveFirst?: boolean;
+      currentClanName?: string;
+    }> => {
+      const targetClan = allClans.find((c) => c.id === clanId);
+      if (!targetClan) {
+        return { ok: false, message: 'Klan tidak ditemukan di Dunia Nuenime.' };
+      }
+
+      // 1. Cek apakah user sudah menjadi anggota aktif klan ini
+      const isAlreadyMemberThisClan = targetClan.members.some(
+        (m) =>
+          (m.userId === activeAccount.id || m.id === activeAccount.id) &&
+          (m.status === 'active' || m.status === 'ACTIVE' || !m.status)
+      );
+      if (repo.joinedClanId === clanId || isAlreadyMemberThisClan) {
+        showToast(`Anda sudah menjadi anggota aktif di klan ${targetClan.name}.`);
+        return { ok: true, message: `Sudah menjadi anggota aktif di klan ${targetClan.name}.` };
+      }
+
+      // 2. Cek apakah user sedang aktif di klan LAIN -> Buka konfirmasi berpindah klan!
+      if (repo.joinedClanId && repo.joinedClanId !== clanId) {
+        const currentClan = allClans.find((c) => c.id === repo.joinedClanId);
+        const currentClanName = currentClan?.name || 'Klan Saat Ini';
+        return {
+          ok: false,
+          message: `Anda masih tergabung dalam klan ${currentClanName}. Untuk bergabung dengan klan ${targetClan.name}, Anda harus keluar dari klan saat ini terlebih dahulu. Apakah Anda ingin keluar dari klan sekarang?`,
+          requiresLeaveFirst: true,
+          currentClanName,
+        };
+      }
+
+      // 3. Cek apakah sudah ada permintaan pending untuk klan ini
+      const existingPending = clanJoinRequests.find(
+        (r) => r.clanId === clanId && r.userId === activeAccount.id && r.status === 'pending'
+      );
+      if (existingPending) {
+        showToast(`Permintaan Anda sedang menunggu konfirmasi dari Pemimpin ${targetClan.name}.`);
+        return {
+          ok: false,
+          message: `Permintaan bergabung ke ${targetClan.name} sudah terkirim (Menunggu Konfirmasi Pemimpin).`,
+        };
+      }
+
+      // 4. Panggil RPC Supabase rpc_request_join_clan
+      try {
+        const { data, error } = await supabase.rpc('rpc_request_join_clan', {
+          p_clan_id: clanId,
+          p_user_id: activeAccount.id,
+        });
+
+        if (error) {
+          console.warn('[Supabase RPC] Error request_join_clan:', error);
+        } else if (data) {
+          if (!data.success) {
+            if (data.requires_leave_first) {
+              return {
+                ok: false,
+                message: data.message,
+                requiresLeaveFirst: true,
+                currentClanName: data.current_clan_name,
+              };
+            }
+            showToast(data.message);
+            return { ok: false, message: data.message };
+          }
+        }
+      } catch (rpcErr) {
+        console.warn('[Supabase RPC] Exception request_join_clan:', rpcErr);
+      }
+
+      // 5. Tambahkan request pending ke state lokal
+      const newReq: ClanJoinRequest = {
+        id: `req-${activeAccount.id}-${Date.now()}`,
+        clanId,
+        userId: activeAccount.id,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        displayName: activeAccount.displayName.replace(/\s*\(.*\)/, ''),
+        avatarUrl: activeAccount.avatarUrl || null,
+        borderUrl: activeAccount.borderUrl || null,
+        level: activeAccount.level || 1,
+        exp: activeAccount.exp || 0,
+        rank: activeAccount.rank || 'STONE',
+        clanName: targetClan.name,
+        clanTag: targetClan.tag,
+      };
+
+      setClanJoinRequests((prev) => [
+        newReq,
+        ...prev.filter((r) => !(r.clanId === clanId && r.userId === activeAccount.id)),
+      ]);
+
+      fantasySoundEngine.playTap();
+      showToast(`Permintaan bergabung ke ${targetClan.name} terkirim! Menunggu konfirmasi Pemimpin.`);
+      return {
+        ok: true,
+        message: `Permintaan terkirim. Menunggu konfirmasi Pemimpin ${targetClan.name}.`,
+      };
+    },
+    [allClans, activeAccount, repo.joinedClanId, clanJoinRequests, showToast]
+  );
+
+  const respondJoinRequest = useCallback(
+    async (
+      requestId: string,
+      action: 'approve' | 'reject'
+    ): Promise<{ ok: boolean; message: string }> => {
+      try {
+        const { data, error } = await supabase.rpc('rpc_respond_clan_join_request', {
+          p_request_id: requestId,
+          p_leader_id: activeAccount.id,
+          p_action: action,
+        });
+
+        if (error) {
+          console.warn('[Supabase RPC] Error respond_clan_join_request:', error);
+        } else if (data && !data.success) {
+          showToast(data.message);
+          return { ok: false, message: data.message };
+        }
+      } catch (rpcErr) {
+        console.warn('[Supabase RPC] Exception respond_clan_join_request:', rpcErr);
+      }
+
+      setClanJoinRequests((prev) =>
+        prev.map((r) =>
+          r.id === requestId
+            ? {
+                ...r,
+                status: action === 'approve' ? 'approved' : 'rejected',
+                reviewedBy: activeAccount.id,
+                reviewedAt: new Date().toISOString(),
+              }
+            : r
+        )
+      );
+
+      if (action === 'approve') {
+        fantasySoundEngine.playClanJoinFanfare();
+        showToast('Permintaan disetujui! Anggota baru telah resmi bergabung ke klan.');
+      } else {
+        showToast('Permintaan bergabung ditolak.');
+      }
+
+      void refreshClanData();
+      return {
+        ok: true,
+        message: action === 'approve' ? 'Permintaan diterima.' : 'Permintaan ditolak.',
+      };
+    },
+    [activeAccount.id, showToast, refreshClanData]
+  );
+
+  const cancelJoinRequest = useCallback(
+    async (clanId: string): Promise<{ ok: boolean; message: string }> => {
+      try {
+        await supabase.rpc('rpc_cancel_clan_join_request', {
+          p_clan_id: clanId,
+          p_user_id: activeAccount.id,
+        });
+      } catch (err) {
+        console.warn('[Supabase RPC] cancel_clan_join_request error:', err);
+      }
+
+      setClanJoinRequests((prev) =>
+        prev.filter((r) => !(r.clanId === clanId && r.userId === activeAccount.id && r.status === 'pending'))
+      );
+      showToast('Permintaan bergabung dibatalkan.');
+      return { ok: true, message: 'Permintaan bergabung dibatalkan.' };
+    },
+    [activeAccount.id, showToast]
+  );
+
+  const leaveClan = useCallback(
+    async (
+      clanId: string
+    ): Promise<{
+      ok: boolean;
+      message: string;
+      isLeader?: boolean;
+      hasOtherMembers?: boolean;
+    }> => {
       const targetClan = allClans.find((c) => c.id === clanId);
       if (!targetClan) {
         return { ok: false, message: 'Klan tidak ditemukan.' };
       }
 
-      const alreadyInClan = targetClan.members.some((m) => m.userId === activeAccount.id);
-      if (repo.joinedClanId === clanId && alreadyInClan) {
-        showToast(`Anda sudah tercatat sebagai anggota aktif di ${targetClan.name}.`);
-        return { ok: true, message: 'Sudah menjadi anggota klan ini.' };
-      }
+      try {
+        const { data, error } = await supabase.rpc('rpc_leave_clan', {
+          p_clan_id: clanId,
+          p_user_id: activeAccount.id,
+        });
 
-      if (
-        !alreadyInClan &&
-        targetClan.members.length >= NUENIME_SYSTEM_LIMITS.MAX_MEMBERS_PER_CLAN
-      ) {
-        const msg = `Kapasitas klan ${targetClan.name} telah penuh (${targetClan.members.length}/${NUENIME_SYSTEM_LIMITS.MAX_MEMBERS_PER_CLAN} Anggota).`;
-        showToast(msg);
-        return { ok: false, message: msg };
+        if (error) {
+          console.warn('[Supabase RPC] Error leave_clan:', error);
+        } else if (data && !data.success) {
+          if (data.requires_transfer) {
+            return {
+              ok: false,
+              message: data.message,
+              isLeader: true,
+              hasOtherMembers: true,
+            };
+          }
+          showToast(data.message);
+          return { ok: false, message: data.message };
+        }
+      } catch (rpcErr) {
+        console.warn('[Supabase RPC] Exception leave_clan:', rpcErr);
       }
-
-      fantasySoundEngine.playClanJoinFanfare();
 
       setRepo((prev) => {
-        const nowIso = new Date().toISOString();
         const nextCities = prev.cities.map((city) => {
           if (city.id !== targetClan.cityId) return city;
           return {
             ...city,
             clans: city.clans.map((clan) => {
               if (clan.id !== clanId) return clan;
-              const exists = clan.members.some((m) => m.userId === activeAccount.id);
-              if (exists) return clan;
-              if (clan.members.length >= NUENIME_SYSTEM_LIMITS.MAX_MEMBERS_PER_CLAN) return clan;
-
-              const newMember: ClanMember = {
-                id: `mem-${activeAccount.id}-${Date.now()}`,
-                userId: activeAccount.id,
-                clanId: clan.id,
-                cityId: city.id,
-                name: activeAccount.displayName.replace(/\s*\(.*\)/, ''),
-                role: 'Anggota',
-                title: activeAccount.title,
-                elementAffinity: city.element,
-                joinedAt: nowIso,
-                contributionScore: 0,
-                completedMissionsCount: 0,
-                status: 'ACTIVE',
-              };
-
-              const updatedMembers = [...clan.members, newMember];
+              const remainingMembers = clan.members.filter(
+                (m) => m.userId !== activeAccount.id && m.id !== activeAccount.id
+              );
               return {
                 ...clan,
-                members: updatedMembers,
-                memberCount: updatedMembers.length,
+                members: remainingMembers,
+                memberCount: remainingMembers.length,
               };
             }),
           };
         });
 
-        return {
+        const nextState = {
           ...prev,
           cities: verifyAndReconcileWorldCities(nextCities),
-          joinedClanId: clanId,
+          joinedClanId: null,
         };
+        saveStoredRepository(nextState);
+        return nextState;
       });
 
-      // Simpan status bergabung ke database Supabase secara real-time
-      void (async () => {
-        try {
-          await supabase.from('rpg_clan_members').upsert({
-            clan_id: clanId,
-            user_id: activeAccount.id,
-            display_name: activeAccount.displayName.replace(/\s*\(.*\)/, ''),
-            avatar_url: activeAccount.avatarUrl || null,
-            border_url: activeAccount.borderUrl || null,
-            role: 'Anggota',
-            contribution_score: 0,
-            level: activeAccount.level || 1,
-            last_active_at: new Date().toISOString(),
-          });
-        } catch (dbErr) {
-          console.warn('[Supabase DB] Error simpan anggota klan:', dbErr);
-        }
-      })();
-
-      showToast(`Berhasil bergabung sebagai anggota aktif di ${targetClan.name}!`);
-      return { ok: true, message: `Bergabung ke ${targetClan.name}` };
+      fantasySoundEngine.playTap();
+      showToast(`Anda telah resmi keluar dari klan ${targetClan.name}.`);
+      void refreshClanData();
+      return { ok: true, message: `Berhasil keluar dari klan ${targetClan.name}.` };
     },
-    [activeAccount.avatarUrl, activeAccount.borderUrl, activeAccount.displayName, activeAccount.id, activeAccount.level, allClans, showToast]
+    [allClans, activeAccount.id, showToast, refreshClanData]
+  );
+
+  const disbandClan = useCallback(
+    async (clanId: string): Promise<{ ok: boolean; message: string }> => {
+      const targetClan = allClans.find((c) => c.id === clanId);
+      if (!targetClan) {
+        return { ok: false, message: 'Klan tidak ditemukan.' };
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('rpc_disband_clan', {
+          p_clan_id: clanId,
+          p_leader_id: activeAccount.id,
+        });
+
+        if (error) {
+          console.warn('[Supabase RPC] Error disband_clan:', error);
+        } else if (data && !data.success) {
+          showToast(data.message);
+          return { ok: false, message: data.message };
+        }
+      } catch (rpcErr) {
+        console.warn('[Supabase RPC] Exception disband_clan:', rpcErr);
+      }
+
+      setRepo((prev) => {
+        const nextCities = prev.cities.map((city) => {
+          if (city.id !== targetClan.cityId) return city;
+          return {
+            ...city,
+            clans: city.clans.filter((c) => c.id !== clanId),
+          };
+        });
+
+        const nextState = {
+          ...prev,
+          cities: verifyAndReconcileWorldCities(nextCities),
+          joinedClanId: prev.joinedClanId === clanId ? null : prev.joinedClanId,
+        };
+        saveStoredRepository(nextState);
+        return nextState;
+      });
+
+      fantasySoundEngine.playTap();
+      showToast(`Klan "${targetClan.name}" telah resmi dibubarkan.`);
+      void refreshClanData();
+      return { ok: true, message: `Klan ${targetClan.name} berhasil dibubarkan.` };
+    },
+    [allClans, activeAccount.id, showToast, refreshClanData]
+  );
+
+  const transferClanLeadership = useCallback(
+    async (clanId: string, newLeaderId: string): Promise<{ ok: boolean; message: string }> => {
+      try {
+        const { data, error } = await supabase.rpc('rpc_transfer_clan_leadership', {
+          p_clan_id: clanId,
+          p_current_leader_id: activeAccount.id,
+          p_new_leader_id: newLeaderId,
+        });
+
+        if (error) {
+          console.warn('[Supabase RPC] Error transfer_clan_leadership:', error);
+        } else if (data && !data.success) {
+          showToast(data.message);
+          return { ok: false, message: data.message };
+        }
+      } catch (rpcErr) {
+        console.warn('[Supabase RPC] Exception transfer_clan_leadership:', rpcErr);
+      }
+
+      setRepo((prev) => {
+        const nextCities = prev.cities.map((city) => ({
+          ...city,
+          clans: city.clans.map((clan) => {
+            if (clan.id !== clanId) return clan;
+            return {
+              ...clan,
+              leaderId: newLeaderId,
+              members: clan.members.map((m) => {
+                if (m.userId === newLeaderId || m.id === newLeaderId) {
+                  return { ...m, role: 'Pemimpin Klan' };
+                }
+                if (m.userId === activeAccount.id || m.id === activeAccount.id) {
+                  return { ...m, role: 'Anggota' };
+                }
+                return m;
+              }),
+            };
+          }),
+        }));
+
+        const nextState = {
+          ...prev,
+          cities: verifyAndReconcileWorldCities(nextCities),
+        };
+        saveStoredRepository(nextState);
+        return nextState;
+      });
+
+      fantasySoundEngine.playTap();
+      showToast('Kepemimpinan klan berhasil dialihkan.');
+      void refreshClanData();
+      return { ok: true, message: 'Kepemimpinan klan berhasil dialihkan.' };
+    },
+    [activeAccount.id, showToast, refreshClanData]
+  );
+
+  const joinClan = useCallback(
+    (clanId: string): { ok: boolean; message: string } => {
+      void requestJoinClan(clanId);
+      return { ok: true, message: 'Memproses permintaan bergabung...' };
+    },
+    [requestJoinClan]
   );
 
   const updateClanLogo = useCallback(
@@ -2116,6 +2506,32 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return { ok: false, message: 'Tidak dapat menyerang bos kota domisili klan sendiri.' };
       }
 
+      // Aturan 1x Serang: Validasi apakah user sudah pernah menyerang bos ini di siklus sekarang
+      const lastDefeatedLog = bossBattleLogs.find(
+        (log) =>
+          (log.targetBossId === targetBoss.id || log.bossId === targetBoss.id || log.targetCityId === targetBoss.cityId) &&
+          (log.bossDefeated || log.isBossDefeated)
+      );
+      const lastDefeatedTime = lastDefeatedLog ? new Date(lastDefeatedLog.createdAt).getTime() : 0;
+
+      const alreadyAttacked = bossBattleLogs.some((log) => {
+        const isSameUser = log.attackerUserId === activeAccount.id;
+        const isSameBoss =
+          log.targetBossId === targetBoss.id ||
+          log.bossId === targetBoss.id ||
+          log.targetCityId === targetBoss.cityId;
+        const logTime = new Date(log.createdAt).getTime();
+        return isSameUser && isSameBoss && logTime >= lastDefeatedTime;
+      });
+
+      if (alreadyAttacked) {
+        showToast(`Batas tercapai: Anda sudah melancarkan serangan 1x ke Bos ${targetBoss.name}!`);
+        return {
+          ok: false,
+          message: `Anda sudah pernah menyerang Bos ${targetBoss.name}. Setiap user hanya dapat menyerang 1x per siklus bos.`,
+        };
+      }
+
       try {
         const { data, error } = await supabase.rpc('rpc_attack_enemy_city_boss', {
           p_boss_id: targetBoss.id,
@@ -2160,7 +2576,7 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return { ok: false, message: msg };
       }
     },
-    [activeAccount.displayName, activeAccount.id, allClans, hydratedCities, refreshClanCombatData, repo.cityBosses, repo.joinedClanId, showToast]
+    [activeAccount.displayName, activeAccount.id, allClans, bossBattleLogs, hydratedCities, refreshClanCombatData, repo.cityBosses, repo.joinedClanId, showToast]
   );
 
   /**
@@ -2439,6 +2855,15 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         addCrystals,
         joinedClanId: repo.joinedClanId,
         joinClan,
+        clanJoinRequests,
+        requestJoinClan,
+        respondJoinRequest,
+        cancelJoinRequest,
+        leaveClan,
+        disbandClan,
+        transferClanLeadership,
+        getUserJoinRequest,
+        refreshClanData,
         worldBosses: repo.cityBosses,
         getCityBoss,
         attackWorldBoss,

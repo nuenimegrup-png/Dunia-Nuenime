@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Users, X, Shield, Heart, Flame } from 'lucide-react';
+import { ChevronRight, Users, X, Flame } from 'lucide-react';
 import { WorldCity } from '../types/nuenime';
 import { CityEmblemBadge } from './icons/NuenimeAssets';
 
@@ -34,25 +34,25 @@ export const CityInfoPanel: React.FC<CityInfoPanelProps> = ({
 
   return (
     <div
-      className="pointer-events-auto absolute bottom-2.5 left-2.5 right-2.5 z-30 transition-all duration-200"
+      className="pointer-events-auto absolute bottom-2.5 left-2.5 right-2.5 z-30 transition-all duration-200 max-w-lg mx-auto"
       role="region"
       aria-label={`Informasi Kota ${city.name}`}
     >
-      {/* Nuenime Dark Obsidian Card (No shadow, flat modern & clean border) */}
-      <div className="relative flex flex-col gap-2.5 rounded-2xl border border-slate-700/80 bg-[#0B0E14]/98 p-3 backdrop-blur-xl">
+      {/* Clean Dark Glass Card matching Nuenime Library */}
+      <div className="relative flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#0B0E14]/95 p-3.5 backdrop-blur-xl shadow-2xl">
         {/* Top-right close button */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Tutup panel informasi kota"
-          className="absolute top-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-xl border border-slate-700/80 bg-slate-900/90 text-slate-300 transition-colors hover:border-slate-500 hover:text-white active:scale-95"
+          className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white active:scale-95"
         >
           <X className="h-3.5 w-3.5" />
         </button>
 
-        {/* Top Row: Thumbnail + City Title, Level/Tier, HP & EXP */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Left Circular City Thumbnail with Top Diamond Spike & Bottom Shield Badge (No shadows) */}
+        {/* Top Row: Thumbnail + City Title, Level/Tier, Lore & EXP */}
+        <div className="flex items-center gap-3">
+          {/* Original Circular City Thumbnail with Top Diamond Spike & Bottom Shield Badge */}
           <div className="relative shrink-0 py-1">
             <div
               className="absolute top-0 left-1/2 z-10 h-2 w-2 -translate-x-1/2 rotate-45 border-t border-l border-sky-400/80 bg-slate-900"
@@ -90,67 +90,68 @@ export const CityInfoPanel: React.FC<CityInfoPanelProps> = ({
           </div>
 
           {/* Right Info Column */}
-          <div className="min-w-0 flex-1">
-            {/* Level, Tier & Region (Padded right so it never collides with close button) */}
-            <div className="flex items-center gap-1.5 pr-7 flex-wrap">
-              <span className="shrink-0 rounded border border-sky-400/40 bg-sky-950/80 px-1.5 py-0.2 font-mono text-[9px] font-bold text-sky-200 tabular-nums">
+          <div className="min-w-0 flex-1 pr-6">
+            {/* Level, Tier & Region */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="shrink-0 rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 font-mono text-[9.5px] font-semibold text-slate-300 tabular-nums">
                 Lv.{city.level} · {city.tier}
               </span>
-              <span className="truncate text-[10px] font-medium text-slate-400">
+              <span className="truncate text-[11px] font-medium text-slate-400">
                 {city.regionName}
               </span>
             </div>
 
-            {/* City Name */}
-            <h2 className="font-display truncate text-[15px] font-bold leading-tight tracking-wide text-white mt-0.5">
+            {/* City Name - Fantasy Display Font */}
+            <h2 className="font-display truncate text-base font-bold leading-tight tracking-wide text-white mt-1">
               {city.name}
             </h2>
 
-            {/* City Boss Status & Open Clan Status */}
-            <div className="mt-1 flex items-center gap-1.5 text-[10px]">
-              <div className="flex flex-1 min-w-0 items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-950/30 px-1.5 py-0.5 text-rose-200">
-                <Flame className="h-3 w-3 shrink-0 text-rose-400" />
-                <span className="font-mono font-bold tabular-nums truncate">
-                  Bos: {city.boss ? `${city.boss.tier} (${city.boss.currentHp > 0 ? 'Aktif' : 'Kalah'})` : 'Aman'}
-                </span>
+            {/* Subtle Metadata Row */}
+            <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+              <div className="flex items-center gap-1 text-slate-300">
+                <Users className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <span className="font-mono tabular-nums">{city.clans.length}/{city.maxClans} Klan</span>
               </div>
-
-              <div className="flex flex-1 min-w-0 items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-950/30 px-1.5 py-0.5 text-amber-200">
-                <Shield className="h-3 w-3 shrink-0 text-amber-300" />
-                <span className="truncate">
-                  Terbuka ({city.clans.length} Klan)
+              <span className="text-slate-600">·</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                    city.boss && city.boss.currentHp > 0
+                      ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.6)]'
+                      : 'bg-emerald-500'
+                  }`}
+                />
+                <span className="truncate text-slate-300">
+                  Bos: {city.boss ? `${city.boss.tier} (${city.boss.currentHp > 0 ? 'Aktif' : 'Kalah'})` : 'Aman'}
                 </span>
               </div>
             </div>
 
             {/* City EXP Progress Bar */}
-            <div className="mt-1">
-              <div className="flex items-center justify-between text-[9.5px]">
-                <span className="font-medium text-slate-300 truncate">
-                  EXP: <strong className="font-mono text-sky-200 font-bold">{city.totalExp.toLocaleString('id-ID')}</strong>
+            <div className="mt-1.5 space-y-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-slate-400 font-medium truncate">
+                  EXP: <strong className="font-mono text-slate-200 font-bold">{city.totalExp.toLocaleString('id-ID')}</strong>
                 </span>
-                <span className="font-mono text-slate-400 tabular-nums shrink-0 ml-1">
+                <span className="font-mono text-slate-500 tabular-nums shrink-0 ml-1">
                   +{remainingExp.toLocaleString('id-ID')} ke Lv.{city.level + 1}
                 </span>
               </div>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                 <div
-                  className="h-full transition-all duration-300"
-                  style={{
-                    width: `${expPercent}%`,
-                    backgroundColor: city.accentHex,
-                  }}
+                  className="h-full rounded-full transition-all duration-300 bg-sky-400"
+                  style={{ width: `${expPercent}%` }}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Footer Row: All 3 Buttons have the EXACT SAME HEIGHT (h-[36px]), rounded-xl, no shadow */}
-        <div className="grid grid-cols-3 gap-1.5 border-t border-slate-800/80 pt-2">
+        {/* Bottom Footer Row: Unified Clean Buttons */}
+        <div className="grid grid-cols-3 gap-2 border-t border-white/[0.08] pt-2.5">
           {/* 1. Clan Capacity Indicator */}
-          <div className="flex h-[36px] items-center justify-center gap-1 rounded-xl border border-slate-700/80 bg-slate-900/90 px-1 text-[11px] font-semibold text-slate-100">
-            <Users className="h-3.5 w-3.5 shrink-0 text-sky-300" />
+          <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-1 text-xs font-semibold text-slate-300">
+            <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
             <span className="font-mono tabular-nums">
               {city.clans.length}/{city.maxClans}
             </span>
@@ -162,23 +163,23 @@ export const CityInfoPanel: React.FC<CityInfoPanelProps> = ({
             <button
               type="button"
               onClick={() => onSelectCityBoss(city)}
-              className="flex h-[36px] items-center justify-center gap-1 rounded-xl border border-rose-500/40 bg-rose-950/40 px-1 text-[11px] font-semibold text-rose-200 transition-all hover:border-rose-400 active:scale-95"
+              className="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-1 text-xs font-semibold text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95"
             >
               <Flame className="h-3.5 w-3.5 shrink-0 text-rose-400" />
-              <span className="truncate">Bos: {city.boss?.name || 'Penjaga Kota'}</span>
+              <span className="truncate">Bos: {city.boss?.name || 'Penjaga'}</span>
             </button>
           ) : (
-            <div className="flex h-[36px] items-center justify-center gap-1 rounded-xl border border-rose-500/30 bg-rose-950/20 px-1 text-[11px] font-semibold text-rose-300">
-              <Flame className="h-3.5 w-3.5 shrink-0 text-rose-400" />
-              <span className="truncate">Bos: {city.boss?.name || 'Penjaga Kota'}</span>
+            <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-1 text-xs font-semibold text-slate-400">
+              <Flame className="h-3.5 w-3.5 shrink-0 text-rose-400/80" />
+              <span className="truncate">Bos: {city.boss?.name || 'Penjaga'}</span>
             </div>
           )}
 
-          {/* 3. "Masuk ke Kota" CTA Button (Matching h-[36px], rounded-xl, Nuenime Sky) */}
+          {/* 3. "Masuk Kota" Primary CTA Button */}
           <button
             type="button"
             onClick={() => onEnterCity(city)}
-            className="flex h-[36px] items-center justify-center gap-1 rounded-xl border border-sky-400/50 bg-sky-600 px-1 text-[11px] font-bold text-white transition-all hover:bg-sky-500 active:scale-95"
+            className="flex h-9 items-center justify-center gap-1 rounded-xl bg-sky-600 px-2 text-xs font-bold text-white transition-all hover:bg-sky-500 active:scale-95 shadow-sm"
           >
             <span className="truncate">Masuk Kota</span>
             <ChevronRight className="h-3.5 w-3.5 shrink-0 text-sky-100" />
