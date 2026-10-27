@@ -119,6 +119,9 @@ export const EnemyBossRaidModal: React.FC<EnemyBossRaidModalProps> = ({
     targetCity ??
     (effectiveBoss ? cities.find((c) => c.id === effectiveBoss.cityId) ?? null : null);
 
+  const targetBossId = effectiveBoss?.id ?? bossId ?? null;
+  const userClanId = userClan?.id ?? joinedClanId ?? null;
+
   // Validasi Hak Akses: HANYA Pemimpin Klan yang berhak memulai serangan Boss
   const isLeader = Boolean(
     userClan &&
@@ -132,13 +135,13 @@ export const EnemyBossRaidModal: React.FC<EnemyBossRaidModalProps> = ({
 
   // Sinkronisasi data resmi dari Supabase via RPC rpc_get_boss_raid_leaderboard
   const fetchClanCooldownAndHistory = useCallback(async () => {
-    if (!effectiveBoss) return;
+    if (!targetBossId) return;
     setIsLoadingRaidData(true);
 
     try {
       const { data: raidData, error: raidErr } = await supabase.rpc('rpc_get_boss_raid_leaderboard', {
-        p_boss_id: effectiveBoss.id,
-        p_clan_id: userClan?.id ?? null,
+        p_boss_id: targetBossId,
+        p_clan_id: userClanId ?? null,
       });
 
       if (!raidErr && raidData && raidData.ok) {
@@ -191,11 +194,11 @@ export const EnemyBossRaidModal: React.FC<EnemyBossRaidModalProps> = ({
         }
       } else {
         // Fallback langsung ke tabel cooldown klan jika RPC error
-        if (userClan) {
+        if (userClanId) {
           const { data: cdData } = await supabase
             .from('rpg_clan_boss_cooldowns')
             .select('*')
-            .eq('clan_id', userClan.id)
+            .eq('clan_id', userClanId)
             .order('next_attack_at', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -214,15 +217,15 @@ export const EnemyBossRaidModal: React.FC<EnemyBossRaidModalProps> = ({
     } finally {
       setIsLoadingRaidData(false);
     }
-  }, [effectiveBoss, userClan]);
+  }, [targetBossId, userClanId]);
 
-  // Sinkronisasi data saat modal dibuka atau saat ganti tab
+  // Sinkronisasi data saat modal dibuka
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && targetBossId) {
       refreshClanCombatData();
       fetchClanCooldownAndHistory();
     }
-  }, [isOpen, refreshClanCombatData, fetchClanCooldownAndHistory]);
+  }, [isOpen, targetBossId, userClanId]);
 
   // Countdown timer cooldown setiap detik
   useEffect(() => {
@@ -424,7 +427,7 @@ export const EnemyBossRaidModal: React.FC<EnemyBossRaidModalProps> = ({
                     <CityBossIllustration cityId={effectiveCity.id} size={46} />
                     <span
                       className={`absolute -top-1 -right-1 flex h-3 w-3 rounded-full border-2 border-[#0F141F] ${
-                        currentHp > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'
+                        currentHp > 0 ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' : 'bg-rose-500'
                       }`}
                     />
                   </div>
