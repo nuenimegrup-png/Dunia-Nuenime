@@ -18,7 +18,7 @@ interface CityBossIllustrationProps {
  * 6. Nivara   : Frostmaw (Behemoth Kristal Es & Badai)
  * 7. Astralis : Astral Leviathan (Leviathan Naga Kosmik Bintang)
  */
-export const CityBossIllustration: React.FC<CityBossIllustrationProps> = ({
+export const CityBossIllustration: React.FC<CityBossIllustrationProps> = React.memo(({
   cityId,
   size = 56,
   className = '',
@@ -367,4 +367,4 @@ export const CityBossIllustration: React.FC<CityBossIllustrationProps> = ({
         </svg>
       );
   }
-};
+});

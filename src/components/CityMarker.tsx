@@ -14,7 +14,7 @@ interface CityMarkerProps {
  * Menggunakan plakat metalik gelap solid (#060c18) sehingga teks nama kota dan level
  * selalu tajam, kontras tinggi, dan tidak pernah tembus oleh latar di belakangnya.
  */
-export const CityMarker: React.FC<CityMarkerProps> = ({
+export const CityMarker: React.FC<CityMarkerProps> = React.memo(({
   city,
   isSelected,
   onSelectCity,
@@ -97,4 +97,4 @@ export const CityMarker: React.FC<CityMarkerProps> = ({
       </button>
     </div>
   );
-};
+});

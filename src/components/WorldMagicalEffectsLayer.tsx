@@ -65,7 +65,7 @@ const WORLD_PARTICLES: MagicalParticleSpec[] = [
   { id: 'ast-p5', cx: 655, cy: 1055, r: 2.8, color: '#FFFFFF', delay: '2.9s', duration: '3.5s', type: 'twinkle' },
 ];
 
-export const WorldMagicalEffectsLayer: React.FC = () => {
+export const WorldMagicalEffectsLayer: React.FC = React.memo(() => {
   return (
     <div
       className="pointer-events-none absolute inset-0 select-none overflow-hidden"
@@ -365,4 +365,4 @@ export const WorldMagicalEffectsLayer: React.FC = () => {
       </svg>
     </div>
   );
-};
+});

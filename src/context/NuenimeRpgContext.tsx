@@ -483,23 +483,29 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Auto-persist clanJoinRequests ke localStorage agar status "Menunggu Konfirmasi" permanen & tidak hilang saat reload / keluar
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('nuenime_rpg_clan_join_requests', JSON.stringify(clanJoinRequests));
-      }
-    } catch {}
+    const timer = setTimeout(() => {
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('nuenime_rpg_clan_join_requests', JSON.stringify(clanJoinRequests));
+        }
+      } catch {}
+    }, 400);
+    return () => clearTimeout(timer);
   }, [clanJoinRequests]);
 
   // Idempotency lock set to prevent duplicate clan creations or duplicate mission claims
   const processedRequestKeysRef = useRef<Set<string>>(new Set());
 
-  // Persist repository state to localStorage
+  // Persist repository state to localStorage with debouncing to prevent UI blocking & high RAM
   useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
-    } catch {
-      // Ignore storage quota errors
-    }
+    const timer = setTimeout(() => {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(repo));
+      } catch {
+        // Ignore storage quota errors
+      }
+    }, 600);
+    return () => clearTimeout(timer);
   }, [repo]);
 
   const showToast = useCallback((msg: string) => {

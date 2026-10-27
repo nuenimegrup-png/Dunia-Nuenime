@@ -101,6 +101,31 @@ export const WorldMapViewport: React.FC<WorldMapViewportProps> = ({
   } | null>(null);
   const movedDistanceRef = useRef<number>(0);
 
+  // RAF Throttling to prevent 240Hz gesture event flooding and eliminate UI lag
+  const rafIdRef = useRef<number | null>(null);
+  const pendingUpdateRef = useRef<(() => void) | null>(null);
+
+  const requestThrottledUpdate = useCallback((fn: () => void) => {
+    pendingUpdateRef.current = fn;
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        if (pendingUpdateRef.current) {
+          pendingUpdateRef.current();
+          pendingUpdateRef.current = null;
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
+
   // Measure viewport dimensions
   useEffect(() => {
     const el = containerRef.current;
@@ -196,12 +221,14 @@ export const WorldMapViewport: React.FC<WorldMapViewportProps> = ({
         midY - (pinch.midY - pinch.initialTy) * scaleRatio + (midY - pinch.midY) * 0.25;
 
       const clamped = clampTransform(rawTx, rawTy, nextScale, vpSize.width, vpSize.height);
-      onUpdateTransform(() => ({
-        scale: nextScale,
-        tx: clamped.tx,
-        ty: clamped.ty,
-        isAnimated: false,
-      }));
+      requestThrottledUpdate(() => {
+        onUpdateTransform(() => ({
+          scale: nextScale,
+          tx: clamped.tx,
+          ty: clamped.ty,
+          isAnimated: false,
+        }));
+      });
     } else if (activePointersRef.current.size === 1 && dragOriginRef.current) {
       const dx = localX - dragOriginRef.current.x;
       const dy = localY - dragOriginRef.current.y;
@@ -218,18 +245,29 @@ export const WorldMapViewport: React.FC<WorldMapViewportProps> = ({
           vpSize.width,
           vpSize.height
         );
-        onUpdateTransform((prev) => ({
-          ...prev,
-          tx: clamped.tx,
-          ty: clamped.ty,
-          isAnimated: false,
-        }));
+        requestThrottledUpdate(() => {
+          onUpdateTransform((prev) => ({
+            ...prev,
+            tx: clamped.tx,
+            ty: clamped.ty,
+            isAnimated: false,
+          }));
+        });
       }
     }
   };
 
   const handlePointerUpOrCancel = (e: React.PointerEvent<HTMLDivElement>) => {
     activePointersRef.current.delete(e.pointerId);
+
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    if (pendingUpdateRef.current) {
+      pendingUpdateRef.current();
+      pendingUpdateRef.current = null;
+    }
 
     if (activePointersRef.current.size === 1) {
       const remaining = Array.from(activePointersRef.current.values())[0];

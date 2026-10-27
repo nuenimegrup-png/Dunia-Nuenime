@@ -210,46 +210,54 @@
   animation: magicOrbitSlow 28s linear infinite;
   transform-box: fill-box;
   transform-origin: center;
+  will-change: transform;
 }
 
 .animate-magic-orbit-reverse {
   animation: magicOrbitReverse 22s linear infinite;
   transform-box: fill-box;
   transform-origin: center;
+  will-change: transform;
 }
 
 .animate-magic-breathe {
   animation: magicBreathe 4.8s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .animate-particle-rise {
   animation: particleRise 4.4s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .animate-shimmer-twinkle {
   animation: shimmerTwinkle 3.2s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .animate-tidal-ripple {
   animation: tidalRipple 5.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
   transform-box: fill-box;
   transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .animate-lightning-flicker {
   animation: lightningFlicker 5.5s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .animate-mirage-sway {
   animation: mirageSway 4.2s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
+  will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {

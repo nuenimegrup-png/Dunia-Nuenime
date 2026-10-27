@@ -80,12 +80,8 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
 
   useEffect(() => {
     if (activeTab === 'clans') {
-      setIsLoadingClanTab(true);
+      setIsLoadingClanTab(false);
       fantasySoundEngine.playMarkerSelect();
-      const timer = window.setTimeout(() => {
-        setIsLoadingClanTab(false);
-      }, 540);
-      return () => window.clearTimeout(timer);
     }
   }, [activeTab, city.id]);
 
@@ -276,6 +272,31 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
   } | null>(null);
   const movedDistanceRef = useRef<number>(0);
 
+  // RAF Throttling for City Map
+  const cityRafIdRef = useRef<number | null>(null);
+  const pendingCityUpdateRef = useRef<(() => void) | null>(null);
+
+  const requestCityThrottledUpdate = useCallback((fn: () => void) => {
+    pendingCityUpdateRef.current = fn;
+    if (cityRafIdRef.current === null) {
+      cityRafIdRef.current = requestAnimationFrame(() => {
+        cityRafIdRef.current = null;
+        if (pendingCityUpdateRef.current) {
+          pendingCityUpdateRef.current();
+          pendingCityUpdateRef.current = null;
+        }
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (cityRafIdRef.current !== null) {
+        cancelAnimationFrame(cityRafIdRef.current);
+      }
+    };
+  }, []);
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = mapContainerRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -331,11 +352,13 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
       const rawTx = midX - (pinch.midX - pinch.initialTx) * ratio;
       const rawTy = midY - (pinch.midY - pinch.initialTy) * ratio;
       const clamped = clampCityTransform(rawTx, rawTy, nextScale, vpSize.width, vpSize.height);
-      setCityTransform({
-        scale: nextScale,
-        tx: clamped.tx,
-        ty: clamped.ty,
-        isAnimated: false,
+      requestCityThrottledUpdate(() => {
+        setCityTransform({
+          scale: nextScale,
+          tx: clamped.tx,
+          ty: clamped.ty,
+          isAnimated: false,
+        });
       });
     } else if (activePointersRef.current.size === 1 && dragOriginRef.current) {
       const dx = localX - dragOriginRef.current.x;
@@ -353,18 +376,28 @@ export const CityDetailScreen: React.FC<CityDetailScreenProps> = ({
           vpSize.width,
           vpSize.height
         );
-        setCityTransform((prev) => ({
-          ...prev,
-          tx: clamped.tx,
-          ty: clamped.ty,
-          isAnimated: false,
-        }));
+        requestCityThrottledUpdate(() => {
+          setCityTransform((prev) => ({
+            ...prev,
+            tx: clamped.tx,
+            ty: clamped.ty,
+            isAnimated: false,
+          }));
+        });
       }
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     activePointersRef.current.delete(e.pointerId);
+    if (cityRafIdRef.current !== null) {
+      cancelAnimationFrame(cityRafIdRef.current);
+      cityRafIdRef.current = null;
+    }
+    if (pendingCityUpdateRef.current) {
+      pendingCityUpdateRef.current();
+      pendingCityUpdateRef.current = null;
+    }
     if (activePointersRef.current.size === 1) {
       const rem = Array.from(activePointersRef.current.values())[0];
       dragOriginRef.current = {
