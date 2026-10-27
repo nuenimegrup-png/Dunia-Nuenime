@@ -13,6 +13,7 @@ import {
   Heart,
   Package,
   ShieldCheck,
+  Flame,
 } from 'lucide-react';
 import { WorldCity, WorldBossEvent, CityId } from '../types/nuenime';
 import { WORLD_OVERVIEW_INFO } from '../data/nuenimeWorldData';

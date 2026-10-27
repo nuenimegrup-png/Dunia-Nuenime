@@ -371,7 +371,19 @@ export const ClanLeaderboardScreen: React.FC<ClanLeaderboardScreenProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {!isJoined ? (
+                        {isJoined ? (
+                          <span className="flex h-7 items-center gap-1 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-[11px] font-semibold text-emerald-400">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>Klan Anda</span>
+                          </span>
+                        ) : joinedClanId ? (
+                          <span
+                            title="Anda sudah memiliki/tergabung dalam klan lain"
+                            className="flex h-7 items-center gap-1 rounded-xl border border-white/5 bg-white/[0.02] px-2.5 text-[11px] font-medium text-slate-500 cursor-not-allowed select-none"
+                          >
+                            <span>Dilarang</span>
+                          </span>
+                        ) : (
                           <button
                             type="button"
                             onClick={() => onSelectClan(clan)}
@@ -380,11 +392,6 @@ export const ClanLeaderboardScreen: React.FC<ClanLeaderboardScreenProps> = ({
                             <Shield className="h-3 w-3" />
                             <span>Gabung</span>
                           </button>
-                        ) : (
-                          <span className="flex h-7 items-center gap-1 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-[11px] font-semibold text-emerald-400">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            <span>Klan Anda</span>
-                          </span>
                         )}
 
                         <button

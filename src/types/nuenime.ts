@@ -128,6 +128,7 @@ export interface CityBossRecord {
   worldYPercent: number;
   battleHistoryCount: number;
   defeatedCount?: number;
+  currentRound?: number;
   respawnAt?: string | null;
   lastUpdatedAt: string;
 }
@@ -288,9 +289,35 @@ export interface BossBattleLog {
   bossHpAfter: number;
   bossDefeated?: boolean;
   isBossDefeated?: boolean;
+  roundId?: number;
   rewardCoins: number;
   rewardExp?: number;
   createdAt: string;
+}
+
+export interface BossRoundHistory {
+  id: string;
+  bossId: string;
+  cityId: string;
+  roundNumber: number;
+  bossName: string;
+  bossLevel: number;
+  winnerClanId: string;
+  winnerClanName: string;
+  winnerDamage: number;
+  totalRaidDamage: number;
+  rewardCoins: number;
+  lastStrikerClanId?: string | null;
+  lastStrikerClanName?: string | null;
+  completedAt: string;
+}
+
+export interface ClanBossCooldown {
+  clanId: string;
+  bossId: string;
+  lastAttackAt: string;
+  nextAttackAt: string;
+  cooldownSeconds?: number;
 }
 
 export interface CityDistrict {

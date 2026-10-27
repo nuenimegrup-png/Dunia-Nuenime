@@ -30,6 +30,7 @@ import {
   ClanCoinTransaction,
   BossBattleLog,
   ClanJoinRequest,
+  ClanJoinRequestStatus,
 } from '../types/nuenime';
 import { WORLD_CITIES as SEED_WORLD_CITIES } from '../data/nuenimeWorldData';
 import {
@@ -205,8 +206,9 @@ function computeRealDistrictInfluence(cities: WorldCity[]): Record<string, Distr
 function buildDefaultRelicLevels(cities: WorldCity[]): Record<string, number> {
   const map: Record<string, number> = {};
   cities.forEach((city) => {
-    city.clans.forEach((clan, idx) => {
-      map[clan.id] = idx === 0 ? 2 : 1;
+    city.clans.forEach((clan) => {
+      // Hanya VALORA CITY (klan user) yang sudah Level 2, klan lain default Level 1
+      map[clan.id] = clan.id === 'clan-aetheria-1792943151390' ? 2 : 1;
     });
   });
   return map;
@@ -251,8 +253,13 @@ function loadInitialRepositoryState(): PersistedRepositoryState {
               ? parsed.joinedClanId
               : null,
           playerContribution: parsed.playerContribution ?? 0,
-          relicShards: parsed.relicShards ?? 0,
-          relicLevels: parsed.relicLevels ?? buildDefaultRelicLevels(reconciledCities),
+          relicShards: Math.max(parsed.relicShards ?? 0, 5),
+          relicLevels: {
+            ...buildDefaultRelicLevels(reconciledCities),
+            ...(parsed.relicLevels ?? {}),
+            'clan-aetheria-1792974812499': 1,
+            'clan-aetheria-1792943151390': Math.max(2, parsed.relicLevels?.['clan-aetheria-1792943151390'] ?? 2),
+          },
           districtInfluence: computeRealDistrictInfluence(reconciledCities),
           completedMissionCounts: parsed.completedMissionCounts ?? {},
           missionProgressMap: parsed.missionProgressMap ?? {},
@@ -359,7 +366,19 @@ interface NuenimeRpgContextValue {
   attackEnemyBoss: (
     bossId: string,
     weaponId?: string | null
-  ) => Promise<{ ok: boolean; message: string; damageDealt?: number; bossDefeated?: boolean }>;
+  ) => Promise<{
+    ok: boolean;
+    message: string;
+    damageDealt?: number;
+    bossDefeated?: boolean;
+    bossHpAfter?: number;
+    winnerClanId?: string;
+    winnerClanName?: string;
+    winnerDamage?: number;
+    rewardCoins?: number;
+    cooldownSeconds?: number;
+    nextAttackAt?: string;
+  }>;
 
   // Gudang & Senjata Sekali Pakai (Consumable Weapons & Clan Economy)
   weaponsCatalog: ClanWeapon[];
@@ -368,8 +387,9 @@ interface NuenimeRpgContextValue {
   bossBattleLogs: BossBattleLog[];
   buyClanWeapon: (
     weaponId: string,
-    quantity?: number
-  ) => Promise<{ ok: boolean; message: string }>;
+    quantity?: number,
+    targetClanId?: string
+  ) => Promise<{ ok: boolean; message: string; remainingCoins?: number; totalStock?: number }>;
   refreshClanCombatData: () => Promise<void>;
 
   // Simulation Missions & Atomic EXP Pipeline (Member -> Clan -> City -> Level & Tier)
@@ -403,6 +423,8 @@ interface NuenimeRpgContextValue {
   relicShards: number;
   relicLevels: Record<string, number>;
   upgradeClanRelic: (clanId: string) => boolean;
+  claimDailyRelics: () => { ok: boolean; message: string; shardsAdded: number };
+  isDailyRelicClaimed: () => boolean;
   districtInfluence: Record<string, DistrictInfluenceState>;
   reinforceClanDistrict: (clanId: string) => void;
   activeRoute: ActiveTravelRoute | null;
@@ -446,7 +468,27 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [clanInventory, setClanInventory] = useState<ClanInventoryItem[]>([]);
   const [clanCoinTransactions, setClanCoinTransactions] = useState<ClanCoinTransaction[]>([]);
   const [bossBattleLogs, setBossBattleLogs] = useState<BossBattleLog[]>([]);
-  const [clanJoinRequests, setClanJoinRequests] = useState<ClanJoinRequest[]>([]);
+  const [clanJoinRequests, setClanJoinRequests] = useState<ClanJoinRequest[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = window.localStorage.getItem('nuenime_rpg_clan_join_requests');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      }
+    } catch {}
+    return [];
+  });
+
+  // Auto-persist clanJoinRequests ke localStorage agar status "Menunggu Konfirmasi" permanen & tidak hilang saat reload / keluar
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('nuenime_rpg_clan_join_requests', JSON.stringify(clanJoinRequests));
+      }
+    } catch {}
+  }, [clanJoinRequests]);
 
   // Idempotency lock set to prevent duplicate clan creations or duplicate mission claims
   const processedRequestKeysRef = useRef<Set<string>>(new Set());
@@ -535,51 +577,6 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [repo.cityBosses, hydratedCities]
   );
 
-  // Saldo Crystal (Diinisialisasi dari parameter 'crystals' Nuenime App atau LocalStorage)
-  const [userCrystals, setUserCrystals] = useState<number>(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        const queryCrystals = params.get('crystals');
-        if (queryCrystals !== null && !isNaN(parseInt(queryCrystals, 10))) {
-          return parseInt(queryCrystals, 10);
-        }
-        const saved = window.localStorage.getItem('nuenime_rpg_crystals');
-        if (saved !== null && !isNaN(parseInt(saved, 10))) {
-          return parseInt(saved, 10);
-        }
-      }
-    } catch {}
-    return 2500; // Default uji coba lokal agar cukup mendirikan klan (2.000 Crystal)
-  });
-
-  const deductCrystals = useCallback((amount: number): boolean => {
-    if (userCrystals < amount) return false;
-    const next = userCrystals - amount;
-    setUserCrystals(next);
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('nuenime_rpg_crystals', String(next));
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'DEDUCT_CRYSTALS', amount }, '*');
-        }
-      }
-    } catch {}
-    return true;
-  }, [userCrystals]);
-
-  const addCrystals = useCallback((amount: number) => {
-    setUserCrystals((prev) => {
-      const next = prev + amount;
-      try {
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('nuenime_rpg_crystals', String(next));
-        }
-      } catch {}
-      return next;
-    });
-  }, []);
-
   const activeAccount: ActiveDemoAccount = useMemo(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -633,6 +630,78 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       isVip: false,
     };
   }, [repo.joinedClanId]);
+
+  // Saldo Crystal (Diinisialisasi dari parameter 'crystals' Nuenime App, LocalStorage, atau Supabase)
+  const [userCrystals, setUserCrystals] = useState<number>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const queryCrystals = params.get('crystals');
+        if (queryCrystals !== null && !isNaN(parseInt(queryCrystals, 10))) {
+          return parseInt(queryCrystals, 10);
+        }
+        const saved = window.localStorage.getItem('nuenime_rpg_crystals');
+        if (saved !== null && !isNaN(parseInt(saved, 10))) {
+          return parseInt(saved, 10);
+        }
+      }
+    } catch {}
+    return 0;
+  });
+
+  // Listener pesan lintas frame dari Nuenime App (Web iframe & React Native WebView)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleParentMessage = (event: MessageEvent) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (!data) return;
+        if ((data.type === 'SYNC_CRYSTALS' || data.type === 'UPDATE_CRYSTALS') && typeof data.crystals === 'number') {
+          setUserCrystals(data.crystals);
+          try {
+            window.localStorage.setItem('nuenime_rpg_crystals', String(data.crystals));
+          } catch {}
+        }
+      } catch {}
+    };
+
+    window.addEventListener('message', handleParentMessage);
+    return () => window.removeEventListener('message', handleParentMessage);
+  }, []);
+
+  const deductCrystals = useCallback((amount: number): boolean => {
+    if (userCrystals < amount) return false;
+    const next = userCrystals - amount;
+    setUserCrystals(next);
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('nuenime_rpg_crystals', String(next));
+        const payload = { type: 'DEDUCT_CRYSTALS', amount, userId: activeAccount.id };
+        // React Native WebView Android / iOS
+        if ((window as any).ReactNativeWebView) {
+          (window as any).ReactNativeWebView.postMessage(JSON.stringify(payload));
+        }
+        // Web Iframe
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(payload, '*');
+        }
+      }
+    } catch {}
+    return true;
+  }, [userCrystals, activeAccount.id]);
+
+  const addCrystals = useCallback((amount: number) => {
+    setUserCrystals((prev) => {
+      const next = prev + amount;
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('nuenime_rpg_crystals', String(next));
+        }
+      } catch {}
+      return next;
+    });
+  }, []);
 
   // Sinkronisasi data real-time dari Database Supabase (Menghapus ketergantungan data dummy)
   const refreshClanCombatData = useCallback(async () => {
@@ -712,34 +781,39 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setBossBattleLogs(
           dbBattleLogs.map((log: any) => ({
             id: log.id,
+            bossId: log.boss_id || log.target_boss_id,
+            targetBossId: log.target_boss_id || log.boss_id,
+            targetCityId: log.target_city_id,
+            targetCityName: log.target_city_name,
+            targetBossName: log.target_boss_name,
             attackerUserId: log.attacker_user_id,
             attackerName: log.attacker_name,
             attackerClanId: log.attacker_clan_id,
             attackerClanName: log.attacker_clan_name,
             originCityId: log.origin_city_id,
             originCityName: log.origin_city_name,
-            targetCityId: log.target_city_id,
-            targetCityName: log.target_city_name,
-            targetBossId: log.target_boss_id,
-            targetBossName: log.target_boss_name,
+            weaponId: log.weapon_id || log.weapon_used_id,
+            weaponUsedId: log.weapon_used_id || log.weapon_id,
+            weaponName: log.weapon_name || log.weapon_used_name,
+            weaponUsedName: log.weapon_used_name || log.weapon_name,
             baseDamage: Number(log.base_damage) || 0,
             weaponDamage: Number(log.weapon_damage) || 0,
-            weaponUsedId: log.weapon_used_id,
-            weaponUsedName: log.weapon_used_name,
             totalDamage: Number(log.total_damage) || 0,
             bossHpBefore: Number(log.boss_hp_before) || 0,
             bossHpAfter: Number(log.boss_hp_after) || 0,
-            isBossDefeated: Boolean(log.is_boss_defeated),
+            bossDefeated: Boolean(log.boss_defeated || log.is_boss_defeated),
+            isBossDefeated: Boolean(log.boss_defeated || log.is_boss_defeated),
+            roundId: Number(log.round_id) || 1,
             rewardCoins: Number(log.reward_coins) || 0,
             createdAt: log.created_at,
           }))
         );
       }
 
-      if (dbBosses && dbBosses.length > 0) {
-        setRepo((prev) => ({
-          ...prev,
-          cityBosses: prev.cityBosses.map((boss) => {
+      setRepo((prev) => {
+        let updatedBosses = prev.cityBosses;
+        if (dbBosses && dbBosses.length > 0) {
+          updatedBosses = prev.cityBosses.map((boss) => {
             const dbB = dbBosses.find((b: any) => b.city_id === boss.cityId || b.id === boss.id);
             if (!dbB) return boss;
             return {
@@ -750,22 +824,39 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               currentHp: Number(dbB.current_hp),
               status: (dbB.status as any) || boss.status,
               defeatedCount: Number(dbB.defeated_count) || 0,
+              currentRound: Number(dbB.current_round) || 1,
               respawnAt: dbB.respawn_at || null,
               lastUpdatedAt: dbB.updated_at || new Date().toISOString(),
             };
-          }),
-          cities: prev.cities.map((city) => {
+          });
+        }
+
+        let updatedCities = prev.cities;
+        if (dbClans && dbClans.length > 0) {
+          updatedCities = prev.cities.map((city) => {
             const nextClans = city.clans.map((clan) => {
-              const matchedDbClan = dbClans?.find((c: any) => c.id === clan.id);
+              const matchedDbClan = dbClans.find((c: any) => c.id === clan.id);
               if (matchedDbClan) {
-                return { ...clan, coins: Number(matchedDbClan.coins) || 0 };
+                return {
+                  ...clan,
+                  coins:
+                    matchedDbClan.coins !== undefined && matchedDbClan.coins !== null
+                      ? Number(matchedDbClan.coins)
+                      : (clan.coins ?? 1000),
+                };
               }
               return clan;
             });
             return { ...city, clans: nextClans };
-          }),
-        }));
-      }
+          });
+        }
+
+        return {
+          ...prev,
+          cityBosses: updatedBosses,
+          cities: updatedCities,
+        };
+      });
     } catch (err) {
       console.warn('[Dunia Nuenime] Gagal refreshClanCombatData:', err);
     }
@@ -787,6 +878,7 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           { data: dbCoinTx },
           { data: dbBattleLogs },
           { data: dbRequests },
+          { data: dbBalance },
         ] = await Promise.all([
           supabase.from('rpg_clans').select('*, members:rpg_clan_members(*)').neq('status', 'disbanded'),
           supabase.from('rpg_cities').select('*'),
@@ -798,9 +890,16 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           supabase.from('rpg_clan_coin_transactions').select('*').order('created_at', { ascending: false }).limit(40),
           supabase.from('rpg_boss_battle_logs').select('*').order('created_at', { ascending: false }).limit(30),
           supabase.from('rpg_clan_join_requests').select('*').in('status', ['pending', 'approved', 'rejected']).order('created_at', { ascending: false }),
+          supabase.from('user_balances').select('crystal_balance').eq('user_id', activeAccount.id).maybeSingle(),
         ]);
 
         if (isMounted) {
+          if (dbBalance && typeof dbBalance.crystal_balance === 'number') {
+            setUserCrystals(dbBalance.crystal_balance);
+            try {
+              window.localStorage.setItem('nuenime_rpg_crystals', String(dbBalance.crystal_balance));
+            } catch {}
+          }
           if (dbWeapons && dbWeapons.length > 0) {
             setWeaponsCatalog(
               dbWeapons.map((w: any) => ({
@@ -884,24 +983,40 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             );
           }
 
-          if (dbRequests) {
-            setClanJoinRequests(
-              dbRequests.map((r: any) => ({
-                id: r.id,
-                clanId: r.clan_id,
-                userId: r.user_id,
-                status: r.status,
-                reviewedBy: r.reviewed_by,
-                reviewedAt: r.reviewed_at,
-                createdAt: r.created_at,
-                displayName: r.display_name,
-                avatarUrl: r.avatar_url,
-                borderUrl: r.border_url,
-                level: Number(r.level) || 1,
-                exp: Number(r.exp) || 0,
-                rank: r.rank || 'STONE',
-              }))
-            );
+          if (dbRequests && Array.isArray(dbRequests)) {
+            const serverRequests: ClanJoinRequest[] = dbRequests.map((r: any) => ({
+              id: r.id,
+              clanId: r.clan_id,
+              userId: r.user_id,
+              status: r.status,
+              reviewedBy: r.reviewed_by,
+              reviewedAt: r.reviewed_at,
+              createdAt: r.created_at,
+              displayName: r.display_name,
+              avatarUrl: r.avatar_url,
+              borderUrl: r.border_url,
+              level: Number(r.level) || 1,
+              exp: Number(r.exp) || 0,
+              rank: r.rank || 'STONE',
+            }));
+
+            setClanJoinRequests((prev) => {
+              const serverKeySet = new Set(
+                serverRequests.map((s) => `${s.clanId}_${s.userId}`.toLowerCase())
+              );
+              // Pertahankan permintaan pending lokal pengguna yang belum tercatat di server agar tidak hilang saat reload / navigasi
+              const preservedLocal = prev.filter((local) => {
+                const key = `${local.clanId}_${local.userId}`.toLowerCase();
+                return !serverKeySet.has(key) && local.status === 'pending';
+              });
+              const merged = [...serverRequests, ...preservedLocal];
+              try {
+                if (typeof window !== 'undefined') {
+                  window.localStorage.setItem('nuenime_rpg_clan_join_requests', JSON.stringify(merged));
+                }
+              } catch {}
+              return merged;
+            });
           }
 
           setRepo((prev) => {
@@ -979,7 +1094,10 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                   tag: c.tag,
                   cityId: city.id,
                   cityName: city.name,
-                  coins: Number(c.coins) || 1000,
+                  coins:
+                    c.coins !== undefined && c.coins !== null
+                      ? Number(c.coins)
+                      : 1000,
                   emblemVariant: (c.emblem_variant as ClanEmblemVariant) || 'solar-crown',
                   accentColor: c.accent_color || '#38BDF8',
                   founderId: c.leader_id || 'system',
@@ -1154,8 +1272,38 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     void syncFromSupabase();
+
+    // Real-time listener saldo Crystal dari Supabase
+    let balanceChannel: any = null;
+    if (activeAccount.id && activeAccount.id !== 'guest') {
+      balanceChannel = supabase
+        .channel(`dunia_crystal_live_${activeAccount.id}_${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_balances',
+            filter: `user_id=eq.${activeAccount.id}`,
+          },
+          (payload: any) => {
+            const newBal = payload.new?.crystal_balance;
+            if (typeof newBal === 'number' && isMounted) {
+              setUserCrystals(newBal);
+              try {
+                window.localStorage.setItem('nuenime_rpg_crystals', String(newBal));
+              } catch {}
+            }
+          }
+        )
+        .subscribe();
+    }
+
     return () => {
       isMounted = false;
+      if (balanceChannel) {
+        supabase.removeChannel(balanceChannel).catch(() => {});
+      }
     };
   }, [activeAccount.id]);
 
@@ -1488,9 +1636,14 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
    */
   const getUserJoinRequest = useCallback(
     (clanId: string): ClanJoinRequest | undefined => {
-      return clanJoinRequests.find(
-        (r) => r.clanId === clanId && r.userId === activeAccount.id && r.status === 'pending'
-      );
+      const activeId = activeAccount.id?.trim();
+      return clanJoinRequests.find((r) => {
+        if (r.clanId !== clanId || r.status !== 'pending') return false;
+        if (!activeId || activeId === 'guest') return false;
+        if (r.userId === activeId) return true;
+        if (r.userId && r.userId.trim().toLowerCase() === activeId.toLowerCase()) return true;
+        return false;
+      });
     },
     [clanJoinRequests, activeAccount.id]
   );
@@ -1507,24 +1660,39 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         supabase.from('rpg_clan_members').select('*').eq('status', 'active'),
       ]);
 
-      if (dbRequests) {
-        setClanJoinRequests(
-          dbRequests.map((r: any) => ({
-            id: r.id,
-            clanId: r.clan_id,
-            userId: r.user_id,
-            status: r.status,
-            reviewedBy: r.reviewed_by,
-            reviewedAt: r.reviewed_at,
-            createdAt: r.created_at,
-            displayName: r.display_name,
-            avatarUrl: r.avatar_url,
-            borderUrl: r.border_url,
-            level: Number(r.level) || 1,
-            exp: Number(r.exp) || 0,
-            rank: r.rank || 'STONE',
-          }))
-        );
+      if (dbRequests && Array.isArray(dbRequests)) {
+        const serverRequests: ClanJoinRequest[] = dbRequests.map((r: any) => ({
+          id: r.id,
+          clanId: r.clan_id,
+          userId: r.user_id,
+          status: r.status,
+          reviewedBy: r.reviewed_by,
+          reviewedAt: r.reviewed_at,
+          createdAt: r.created_at,
+          displayName: r.display_name,
+          avatarUrl: r.avatar_url,
+          borderUrl: r.border_url,
+          level: Number(r.level) || 1,
+          exp: Number(r.exp) || 0,
+          rank: r.rank || 'STONE',
+        }));
+
+        setClanJoinRequests((prev) => {
+          const serverKeySet = new Set(
+            serverRequests.map((s) => `${s.clanId}_${s.userId}`.toLowerCase())
+          );
+          const preservedLocal = prev.filter((local) => {
+            const key = `${local.clanId}_${local.userId}`.toLowerCase();
+            return !serverKeySet.has(key) && local.status === 'pending';
+          });
+          const merged = [...serverRequests, ...preservedLocal];
+          try {
+            if (typeof window !== 'undefined') {
+              window.localStorage.setItem('nuenime_rpg_clan_join_requests', JSON.stringify(merged));
+            }
+          } catch {}
+          return merged;
+        });
       }
 
       if (dbMembers) {
@@ -1545,6 +1713,24 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       console.warn('[Dunia Nuenime] Gagal refreshClanData:', err);
     }
   }, [activeAccount.id]);
+
+  // Realtime subscription untuk mendeteksi permintaan bergabung klan secara instan antar perangkat
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime:rpg_clan_join_requests')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rpg_clan_join_requests' },
+        () => {
+          void refreshClanData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [refreshClanData]);
 
   const requestJoinClan = useCallback(
     async (
@@ -1584,8 +1770,12 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
 
       // 3. Cek apakah sudah ada permintaan pending untuk klan ini
+      const activeId = activeAccount.id?.trim();
       const existingPending = clanJoinRequests.find(
-        (r) => r.clanId === clanId && r.userId === activeAccount.id && r.status === 'pending'
+        (r) =>
+          r.clanId === clanId &&
+          r.status === 'pending' &&
+          (r.userId === activeId || (activeId && r.userId && r.userId.trim().toLowerCase() === activeId.toLowerCase()))
       );
       if (existingPending) {
         showToast(`Permintaan Anda sedang menunggu konfirmasi dari Pemimpin ${targetClan.name}.`);
@@ -1595,17 +1785,40 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         };
       }
 
-      // 4. Panggil RPC Supabase rpc_request_join_clan
+      // 4. Panggil RPC Supabase rpc_request_join_clan atau fallback langsung ke tabel
       try {
         const { data, error } = await supabase.rpc('rpc_request_join_clan', {
           p_clan_id: clanId,
           p_user_id: activeAccount.id,
+          p_display_name: activeAccount.displayName.replace(/\s*\(.*\)/, '') || 'Petualang',
+          p_avatar_url: activeAccount.avatarUrl || null,
+          p_border_url: activeAccount.borderUrl || null,
+          p_level: activeAccount.level || 1,
         });
 
         if (error) {
-          console.warn('[Supabase RPC] Error request_join_clan:', error);
+          console.warn('[Supabase RPC] Error request_join_clan, mencoba fallback tabel:', error);
+          try {
+            await supabase.from('rpg_clan_join_requests').upsert(
+              {
+                clan_id: clanId,
+                user_id: activeAccount.id,
+                status: 'pending',
+                display_name: activeAccount.displayName.replace(/\s*\(.*\)/, '') || 'Petualang',
+                avatar_url: activeAccount.avatarUrl || null,
+                border_url: activeAccount.borderUrl || null,
+                level: activeAccount.level || 1,
+                exp: activeAccount.exp || 0,
+                rank: activeAccount.rank || 'STONE',
+                created_at: new Date().toISOString(),
+              },
+              { onConflict: 'clan_id,user_id' }
+            );
+          } catch (tableErr) {
+            console.warn('[Supabase Table Fallback] Gagal upsert rpg_clan_join_requests:', tableErr);
+          }
         } else if (data) {
-          if (!data.success) {
+          if (!data.ok) {
             if (data.requires_leave_first) {
               return {
                 ok: false,
@@ -1620,9 +1833,26 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       } catch (rpcErr) {
         console.warn('[Supabase RPC] Exception request_join_clan:', rpcErr);
+        try {
+          await supabase.from('rpg_clan_join_requests').upsert(
+            {
+              clan_id: clanId,
+              user_id: activeAccount.id,
+              status: 'pending',
+              display_name: activeAccount.displayName.replace(/\s*\(.*\)/, '') || 'Petualang',
+              avatar_url: activeAccount.avatarUrl || null,
+              border_url: activeAccount.borderUrl || null,
+              level: activeAccount.level || 1,
+              exp: activeAccount.exp || 0,
+              rank: activeAccount.rank || 'STONE',
+              created_at: new Date().toISOString(),
+            },
+            { onConflict: 'clan_id,user_id' }
+          );
+        } catch {}
       }
 
-      // 5. Tambahkan request pending ke state lokal
+      // 5. Tambahkan request pending ke state lokal & localStorage secara permanen
       const newReq: ClanJoinRequest = {
         id: `req-${activeAccount.id}-${Date.now()}`,
         clanId,
@@ -1639,10 +1869,25 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         clanTag: targetClan.tag,
       };
 
-      setClanJoinRequests((prev) => [
-        newReq,
-        ...prev.filter((r) => !(r.clanId === clanId && r.userId === activeAccount.id)),
-      ]);
+      setClanJoinRequests((prev) => {
+        const next = [
+          newReq,
+          ...prev.filter(
+            (r) =>
+              !(
+                r.clanId === clanId &&
+                (r.userId === activeAccount.id ||
+                  (activeAccount.id && r.userId && r.userId.trim().toLowerCase() === activeAccount.id.trim().toLowerCase()))
+              )
+          ),
+        ];
+        try {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('nuenime_rpg_clan_join_requests', JSON.stringify(next));
+          }
+        } catch {}
+        return next;
+      });
 
       fantasySoundEngine.playTap();
       showToast(`Permintaan bergabung ke ${targetClan.name} terkirim! Menunggu konfirmasi Pemimpin.`);
@@ -1659,35 +1904,161 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       requestId: string,
       action: 'approve' | 'reject'
     ): Promise<{ ok: boolean; message: string }> => {
+      let rpcHandled = false;
       try {
         const { data, error } = await supabase.rpc('rpc_respond_clan_join_request', {
           p_request_id: requestId,
-          p_leader_id: activeAccount.id,
+          p_actor_user_id: activeAccount.id,
           p_action: action,
         });
 
         if (error) {
           console.warn('[Supabase RPC] Error respond_clan_join_request:', error);
-        } else if (data && !data.success) {
+        } else if (data && !data.ok) {
           showToast(data.message);
           return { ok: false, message: data.message };
+        } else if (data && data.ok) {
+          rpcHandled = true;
         }
       } catch (rpcErr) {
         console.warn('[Supabase RPC] Exception respond_clan_join_request:', rpcErr);
       }
 
-      setClanJoinRequests((prev) =>
-        prev.map((r) =>
+      // Fallback update status di tabel rpg_clan_join_requests jika RPC belum berjalan
+      if (!rpcHandled) {
+        try {
+          await supabase
+            .from('rpg_clan_join_requests')
+            .update({
+              status: action === 'approve' ? 'approved' : 'rejected',
+              reviewed_by: activeAccount.id,
+              reviewed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', requestId);
+        } catch (updateErr) {
+          console.warn('[Supabase direct] Update join request error:', updateErr);
+        }
+      }
+
+      const targetReq = clanJoinRequests.find((r) => r.id === requestId);
+      if (action === 'approve' && targetReq) {
+        // Fallback insert/update member ke rpg_clan_members jika belum diproses oleh RPC
+        if (!rpcHandled) {
+          try {
+            const { data: existingRows } = await supabase
+              .from('rpg_clan_members')
+              .select('id')
+              .eq('clan_id', targetReq.clanId)
+              .eq('user_id', targetReq.userId)
+              .limit(1);
+
+            if (existingRows && existingRows.length > 0) {
+              await supabase
+                .from('rpg_clan_members')
+                .update({
+                  status: 'active',
+                  role: 'Anggota',
+                  display_name: targetReq.displayName || 'Petualang',
+                  avatar_url: targetReq.avatarUrl || null,
+                  border_url: targetReq.borderUrl || null,
+                  level: targetReq.level || 1,
+                  last_active_at: new Date().toISOString(),
+                })
+                .eq('id', existingRows[0].id);
+            } else {
+              await supabase.from('rpg_clan_members').insert({
+                clan_id: targetReq.clanId,
+                user_id: targetReq.userId,
+                display_name: targetReq.displayName || 'Petualang',
+                avatar_url: targetReq.avatarUrl || null,
+                border_url: targetReq.borderUrl || null,
+                role: 'Anggota',
+                level: targetReq.level || 1,
+                status: 'active',
+                contribution_score: 0,
+                joined_at: new Date().toISOString(),
+                last_active_at: new Date().toISOString(),
+              });
+            }
+
+            // Sync user profile clan_id jika ada
+            try {
+              await supabase
+                .from('rpg_user_profiles')
+                .update({
+                  clan_id: targetReq.clanId,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('user_id', targetReq.userId);
+            } catch {}
+          } catch (memberErr) {
+            console.warn('[Supabase direct] Member save error:', memberErr);
+          }
+        }
+
+        // Tambahkan ke repo anggota klan secara lokal jika belum terdaftar
+        setRepo((prev) => {
+          const nextCities = prev.cities.map((c) => ({
+            ...c,
+            clans: c.clans.map((cl) => {
+              if (cl.id !== targetReq.clanId) return cl;
+              const alreadyMember = cl.members.some(
+                (m) => m.userId === targetReq.userId || m.id === targetReq.userId
+              );
+              if (alreadyMember) return cl;
+              const newMember: ClanMember = {
+                id: targetReq.userId,
+                userId: targetReq.userId,
+                clanId: targetReq.clanId,
+                cityId: (cl.cityId || 'CITY_1') as CityId,
+                name: targetReq.displayName || 'Petualang',
+                role: 'Anggota',
+                title: 'Petualang Klan',
+                elementAffinity: 'Netral',
+                avatarUrl: targetReq.avatarUrl,
+                borderUrl: targetReq.borderUrl,
+                level: targetReq.level || 1,
+                contributionScore: 0,
+                completedMissionsCount: 0,
+                joinedAt: new Date().toISOString(),
+                lastActive: new Date().toISOString(),
+                status: 'active',
+              };
+              return {
+                ...cl,
+                memberCount: cl.memberCount + 1,
+                members: [...cl.members, newMember],
+              };
+            }),
+          }));
+
+          return {
+            ...prev,
+            cities: nextCities,
+            ...(targetReq.userId === activeAccount.id ? { joinedClanId: targetReq.clanId } : {}),
+          };
+        });
+      }
+
+      setClanJoinRequests((prev) => {
+        const next = prev.map((r) =>
           r.id === requestId
             ? {
                 ...r,
-                status: action === 'approve' ? 'approved' : 'rejected',
+                status: (action === 'approve' ? 'approved' : 'rejected') as ClanJoinRequestStatus,
                 reviewedBy: activeAccount.id,
                 reviewedAt: new Date().toISOString(),
               }
             : r
-        )
-      );
+        );
+        try {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('nuenime_rpg_clan_join_requests', JSON.stringify(next));
+          }
+        } catch {}
+        return next;
+      });
 
       if (action === 'approve') {
         fantasySoundEngine.playClanJoinFanfare();
@@ -1702,7 +2073,7 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         message: action === 'approve' ? 'Permintaan diterima.' : 'Permintaan ditolak.',
       };
     },
-    [activeAccount.id, showToast, refreshClanData]
+    [activeAccount.id, clanJoinRequests, showToast, refreshClanData]
   );
 
   const cancelJoinRequest = useCallback(
@@ -1716,9 +2087,32 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         console.warn('[Supabase RPC] cancel_clan_join_request error:', err);
       }
 
-      setClanJoinRequests((prev) =>
-        prev.filter((r) => !(r.clanId === clanId && r.userId === activeAccount.id && r.status === 'pending'))
-      );
+      try {
+        await supabase
+          .from('rpg_clan_join_requests')
+          .delete()
+          .eq('clan_id', clanId)
+          .eq('user_id', activeAccount.id);
+      } catch {}
+
+      setClanJoinRequests((prev) => {
+        const next = prev.filter(
+          (r) =>
+            !(
+              r.clanId === clanId &&
+              (r.userId === activeAccount.id ||
+                (activeAccount.id && r.userId && r.userId.trim().toLowerCase() === activeAccount.id.trim().toLowerCase())) &&
+              r.status === 'pending'
+            )
+        );
+        try {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('nuenime_rpg_clan_join_requests', JSON.stringify(next));
+          }
+        } catch {}
+        return next;
+      });
+
       showToast('Permintaan bergabung dibatalkan.');
       return { ok: true, message: 'Permintaan bergabung dibatalkan.' };
     },
@@ -1747,8 +2141,8 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         if (error) {
           console.warn('[Supabase RPC] Error leave_clan:', error);
-        } else if (data && !data.success) {
-          if (data.requires_transfer) {
+        } else if (data && !data.ok) {
+          if (data.is_leader && data.has_other_members) {
             return {
               ok: false,
               message: data.message,
@@ -1809,12 +2203,12 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
         const { data, error } = await supabase.rpc('rpc_disband_clan', {
           p_clan_id: clanId,
-          p_leader_id: activeAccount.id,
+          p_actor_user_id: activeAccount.id,
         });
 
         if (error) {
           console.warn('[Supabase RPC] Error disband_clan:', error);
-        } else if (data && !data.success) {
+        } else if (data && !data.ok) {
           showToast(data.message);
           return { ok: false, message: data.message };
         }
@@ -1859,7 +2253,7 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         if (error) {
           console.warn('[Supabase RPC] Error transfer_clan_leadership:', error);
-        } else if (data && !data.success) {
+        } else if (data && !data.ok) {
           showToast(data.message);
           return { ok: false, message: data.message };
         }
@@ -2420,11 +2814,16 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
    * Terhubung langsung ke RPC PostgreSQL Supabase `rpc_buy_clan_weapon`
    */
   const buyClanWeapon = useCallback(
-    async (weaponId: string, quantity = 1): Promise<{ ok: boolean; message: string }> => {
-      const userClan = allClans.find((c) => c.id === repo.joinedClanId);
+    async (
+      weaponId: string,
+      quantity = 1,
+      targetClanId?: string
+    ): Promise<{ ok: boolean; message: string; remainingCoins?: number; totalStock?: number }> => {
+      const clanIdToUse = targetClanId || repo.joinedClanId;
+      const userClan = allClans.find((c) => c.id === clanIdToUse);
       if (!userClan) {
-        showToast('Anda harus bergabung dengan klan terlebih dahulu.');
-        return { ok: false, message: 'Belum bergabung ke klan.' };
+        showToast('Klan tidak ditemukan.');
+        return { ok: false, message: 'Klan tidak ditemukan.' };
       }
 
       // Validasi role ketua di client sebelum panggil backend
@@ -2438,7 +2837,7 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       if (!isLeader) {
         showToast('Hanya Ketua Klan yang berhak membeli senjata menggunakan saldo Coin klan.');
-        return { ok: false, message: 'Bukan ketua klan.' };
+        return { ok: false, message: 'Hanya Ketua Klan yang berhak membeli senjata.' };
       }
 
       try {
@@ -2461,15 +2860,66 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         fantasySoundEngine.playCoinReceive();
         showToast(data.message);
+
+        const remainingCoins =
+          data.remaining_coins !== undefined ? Number(data.remaining_coins) : undefined;
+        const totalStock =
+          data.total_stock !== undefined ? Number(data.total_stock) : undefined;
+
+        // Update saldo koin klan di local repository secara instan
+        if (remainingCoins !== undefined) {
+          setRepo((prev) => ({
+            ...prev,
+            cities: prev.cities.map((city) => ({
+              ...city,
+              clans: city.clans.map((cl) =>
+                cl.id === userClan.id ? { ...cl, coins: remainingCoins } : cl
+              ),
+            })),
+          }));
+        }
+
+        // Update stok klan di inventory klan secara instan
+        if (totalStock !== undefined) {
+          setClanInventory((prev) => {
+            const exists = prev.some((i) => i.clanId === userClan.id && i.weaponId === weaponId);
+            if (exists) {
+              return prev.map((i) =>
+                i.clanId === userClan.id && i.weaponId === weaponId
+                  ? { ...i, quantity: totalStock, updatedAt: new Date().toISOString() }
+                  : i
+              );
+            } else {
+              const catalogWeapon = weaponsCatalog.find((w) => w.id === weaponId);
+              return [
+                ...prev,
+                {
+                  id: `inv-${userClan.id}-${weaponId}`,
+                  clanId: userClan.id,
+                  weaponId,
+                  quantity: totalStock,
+                  updatedAt: new Date().toISOString(),
+                  weapon: catalogWeapon,
+                },
+              ];
+            }
+          });
+        }
+
         await refreshClanCombatData();
-        return { ok: true, message: data.message };
+        return {
+          ok: true,
+          message: data.message,
+          remainingCoins,
+          totalStock,
+        };
       } catch (err: any) {
         const msg = err?.message || 'Terjadi kesalahan sistem saat pembelian senjata.';
         showToast(msg);
         return { ok: false, message: msg };
       }
     },
-    [activeAccount.id, allClans, refreshClanCombatData, repo.joinedClanId, showToast]
+    [activeAccount.id, allClans, refreshClanCombatData, repo.joinedClanId, showToast, weaponsCatalog]
   );
 
   /**
@@ -2484,7 +2934,19 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     async (
       bossId: string,
       weaponId?: string | null
-    ): Promise<{ ok: boolean; message: string; damageDealt?: number; bossDefeated?: boolean }> => {
+    ): Promise<{
+      ok: boolean;
+      message: string;
+      damageDealt?: number;
+      bossDefeated?: boolean;
+      bossHpAfter?: number;
+      winnerClanId?: string;
+      winnerClanName?: string;
+      winnerDamage?: number;
+      rewardCoins?: number;
+      cooldownSeconds?: number;
+      nextAttackAt?: string;
+    }> => {
       const userClan = allClans.find((c) => c.id === repo.joinedClanId);
       if (!userClan) {
         showToast('Anda harus bergabung dengan klan untuk menyerang bos.');
@@ -2501,34 +2963,21 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return { ok: false, message: 'Bos tidak ditemukan.' };
       }
 
-      if (userClan.cityId === targetBoss.cityId) {
-        showToast(`Tidak dapat menyerang bos kota sendiri (${targetBoss.cityName})! Targetkan bos kota musuh.`);
-        return { ok: false, message: 'Tidak dapat menyerang bos kota domisili klan sendiri.' };
-      }
 
-      // Aturan 1x Serang: Validasi apakah user sudah pernah menyerang bos ini di siklus sekarang
-      const lastDefeatedLog = bossBattleLogs.find(
-        (log) =>
-          (log.targetBossId === targetBoss.id || log.bossId === targetBoss.id || log.targetCityId === targetBoss.cityId) &&
-          (log.bossDefeated || log.isBossDefeated)
-      );
-      const lastDefeatedTime = lastDefeatedLog ? new Date(lastDefeatedLog.createdAt).getTime() : 0;
+      // Validasi Hak Akses: HANYA Pemimpin Klan yang berhak memulai serangan Bos
+      const isLeader =
+        userClan.leaderId === activeAccount.id ||
+        userClan.members.some(
+          (m) =>
+            (m.userId === activeAccount.id || m.id === activeAccount.id) &&
+            (m.role === 'Ketua' || m.role === 'Pemimpin Klan' || m.role === 'Founder')
+        );
 
-      const alreadyAttacked = bossBattleLogs.some((log) => {
-        const isSameUser = log.attackerUserId === activeAccount.id;
-        const isSameBoss =
-          log.targetBossId === targetBoss.id ||
-          log.bossId === targetBoss.id ||
-          log.targetCityId === targetBoss.cityId;
-        const logTime = new Date(log.createdAt).getTime();
-        return isSameUser && isSameBoss && logTime >= lastDefeatedTime;
-      });
-
-      if (alreadyAttacked) {
-        showToast(`Batas tercapai: Anda sudah melancarkan serangan 1x ke Bos ${targetBoss.name}!`);
+      if (!isLeader) {
+        showToast('Hanya Pemimpin Klan yang berhak memulai serangan ke Bos Kota!');
         return {
           ok: false,
-          message: `Anda sudah pernah menyerang Bos ${targetBoss.name}. Setiap user hanya dapat menyerang 1x per siklus bos.`,
+          message: 'Hanya Pemimpin Klan yang berhak memulai serangan ke Bos Kota.',
         };
       }
 
@@ -2548,19 +2997,53 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
         if (!data?.ok) {
           showToast(data?.message || 'Serangan tidak dapat diproses.');
-          return { ok: false, message: data?.message || 'Gagal menyerang.' };
+          return {
+            ok: false,
+            message: data?.message || 'Gagal menyerang.',
+            cooldownSeconds: data?.cooldown_seconds,
+            nextAttackAt: data?.next_attack_at,
+          };
         }
 
-        if (data.is_boss_defeated) {
+        const isDefeated = Boolean(data.boss_defeated || data.is_boss_defeated);
+
+        if (isDefeated) {
           fantasySoundEngine.playClanJoinFanfare();
+          const winnerText = data.winner_clan_name
+            ? `Klan ${data.winner_clan_name} Juara 1!`
+            : `Klan ${userClan.name} Juara 1!`;
           showToast(
-            `KEMENANGAN MUTLAK! Bos ${targetBoss.name} berhasil ditaklukkan! Klan ${userClan.name} memperoleh +${data.reward_coins} Coin & +${data.reward_exp} EXP!`
+            `KEMENANGAN BOS! ${winnerText} Meraih +${Number(data.reward_coins || 0).toLocaleString('id-ID')} Coin Kas Klan!`
           );
         } else {
           fantasySoundEngine.playBossStrike();
           showToast(
-            `Serangan berhasil! Total ${data.total_damage} Damage diberikan ke ${targetBoss.name} (Sisa HP: ${data.boss_hp_after?.toLocaleString('id-ID')}).`
+            `Serangan berhasil! Total -${data.total_damage} Damage diberikan ke ${targetBoss.name} (Sisa HP: ${data.boss_hp_after?.toLocaleString('id-ID')}).`
           );
+        }
+
+        if (weaponId) {
+          setClanInventory((prev) =>
+            prev.map((i) =>
+              i.clanId === userClan.id && i.weaponId === weaponId
+                ? { ...i, quantity: Math.max(0, i.quantity - 1), updatedAt: new Date().toISOString() }
+                : i
+            )
+          );
+        }
+
+        if (isDefeated && data.reward_coins) {
+          const winnerClanId = data.winner_clan_id || userClan.id;
+          const rewardCoins = Number(data.reward_coins);
+          setRepo((prev) => ({
+            ...prev,
+            cities: prev.cities.map((city) => ({
+              ...city,
+              clans: city.clans.map((cl) =>
+                cl.id === winnerClanId ? { ...cl, coins: (cl.coins ?? 0) + rewardCoins } : cl
+              ),
+            })),
+          }));
         }
 
         await refreshClanCombatData();
@@ -2568,7 +3051,14 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           ok: true,
           message: data.message,
           damageDealt: data.total_damage,
-          bossDefeated: data.is_boss_defeated,
+          bossDefeated: isDefeated,
+          bossHpAfter: data.boss_hp_after,
+          winnerClanId: data.winner_clan_id,
+          winnerClanName: data.winner_clan_name,
+          winnerDamage: data.winner_damage,
+          rewardCoins: data.reward_coins,
+          cooldownSeconds: data.cooldown_seconds ?? 3600,
+          nextAttackAt: data.next_attack_at,
         };
       } catch (err: any) {
         const msg = err?.message || 'Terjadi kesalahan sistem saat melancarkan serangan.';
@@ -2576,7 +3066,7 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return { ok: false, message: msg };
       }
     },
-    [activeAccount.displayName, activeAccount.id, allClans, bossBattleLogs, hydratedCities, refreshClanCombatData, repo.cityBosses, repo.joinedClanId, showToast]
+    [activeAccount.displayName, activeAccount.id, allClans, hydratedCities, refreshClanCombatData, repo.cityBosses, repo.joinedClanId, showToast]
   );
 
   /**
@@ -2780,29 +3270,148 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const upgradeClanRelic = useCallback(
     (clanId: string): boolean => {
+      // 1. Validasi kepemilikan klan: Hanya bisa upgrade klan sendiri
+      if (!repo.joinedClanId || repo.joinedClanId !== clanId) {
+        showToast('Anda hanya dapat meningkatkan Artefak Pusaka milik klan Anda sendiri!');
+        return false;
+      }
+
+      // 2. Validasi peran: Hanya Pemimpin / Ketua Klan yang berhak menempa artefak
+      const targetClan = allClans.find((c) => c.id === clanId);
+      const isLeader =
+        targetClan &&
+        (targetClan.leaderId === activeAccount.id ||
+          targetClan.founderId === activeAccount.id ||
+          targetClan.members.some(
+            (m) =>
+              (m.userId === activeAccount.id || m.id === activeAccount.id) &&
+              (m.role === 'Pemimpin Klan' || m.role === 'Ketua' || m.role === 'Founder')
+          ));
+
+      if (!isLeader) {
+        showToast('Hanya Pemimpin / Ketua Klan yang berhak meningkatkan Artefak Pusaka!');
+        return false;
+      }
+
       const currentLv = repo.relicLevels[clanId] ?? 1;
+      if (currentLv >= 10) {
+        showToast('Artefak Pusaka Klan sudah mencapai level maksimum (Level 10)!');
+        return false;
+      }
+
       const cost = currentLv * 2;
       if (repo.relicShards < cost) {
         showToast(
-          `Butuh ${cost} Pecahan Relik (Anda punya ${repo.relicShards}). Selesaikan Misi Simulasi!`
+          `Butuh ${cost} Pecahan Relik (Anda punya ${repo.relicShards}). Klaim jatah harian relik klan!`
         );
         return false;
       }
 
-      fantasySoundEngine.playClanJoinFanfare();
+      const nextLv = currentLv + 1;
+      const coinReward = 1000;
+
+      fantasySoundEngine.playQuestComplete();
       setRepo((prev) => ({
         ...prev,
-        relicShards: prev.relicShards - cost,
+        relicShards: Math.max(0, prev.relicShards - cost),
         relicLevels: {
           ...prev.relicLevels,
-          [clanId]: currentLv + 1,
+          [clanId]: nextLv,
         },
+        cities: prev.cities.map((city) => ({
+          ...city,
+          clans: city.clans.map((cl) =>
+            cl.id === clanId
+              ? { ...cl, coins: (cl.coins ?? 1000) + coinReward }
+              : cl
+          ),
+        })),
       }));
-      showToast(`Artefak Pusaka Klan berhasil ditempa ke Level ${currentLv + 1}!`);
+
+      // Sinkronisasi permanen penambahan koin nyata ke Supabase (rpg_clans.coins)
+      (async () => {
+        try {
+          const { data: dbClan } = await supabase
+            .from('rpg_clans')
+            .select('coins')
+            .eq('id', clanId)
+            .maybeSingle();
+
+          const currentDbCoins =
+            dbClan?.coins !== undefined && dbClan?.coins !== null
+              ? Number(dbClan.coins)
+              : 1000;
+          const nextCoins = currentDbCoins + coinReward;
+
+          await supabase
+            .from('rpg_clans')
+            .update({ coins: nextCoins, updated_at: new Date().toISOString() })
+            .eq('id', clanId);
+        } catch (err) {
+          console.warn('[Dunia Nuenime] Gagal menyimpan penambahan koin ke Supabase:', err);
+        }
+      })();
+
+      showToast(`Artefak Pusaka Klan naik ke Level ${nextLv}! Kas Klan memperoleh +1.000 Coin!`);
       return true;
     },
-    [repo.relicLevels, repo.relicShards, showToast]
+    [activeAccount.id, allClans, repo.joinedClanId, repo.relicLevels, repo.relicShards, showToast]
   );
+
+  const getDailyRelicStorageKey = useCallback(() => {
+    return `nuenime_daily_relic_${activeAccount.id || 'guest'}`;
+  }, [activeAccount.id]);
+
+  const isDailyRelicClaimed = useCallback((): boolean => {
+    if (typeof window === 'undefined') return false;
+    const todayKey = new Date().toISOString().slice(0, 10);
+    return window.localStorage.getItem(getDailyRelicStorageKey()) === todayKey;
+  }, [getDailyRelicStorageKey]);
+
+  const claimDailyRelics = useCallback((): { ok: boolean; message: string; shardsAdded: number } => {
+    // 1. Validasi kepemilikan klan
+    if (!repo.joinedClanId) {
+      showToast('Anda harus memiliki klan untuk mengklaim Relik Pusaka!');
+      return { ok: false, message: 'Belum bergabung ke klan', shardsAdded: 0 };
+    }
+
+    // 2. Validasi Ketua Klan
+    const userClan = allClans.find((c) => c.id === repo.joinedClanId);
+    const isLeader =
+      userClan &&
+      (userClan.leaderId === activeAccount.id ||
+        userClan.founderId === activeAccount.id ||
+        userClan.members.some(
+          (m) =>
+            (m.userId === activeAccount.id || m.id === activeAccount.id) &&
+            (m.role === 'Pemimpin Klan' || m.role === 'Ketua' || m.role === 'Founder')
+        ));
+
+    if (!isLeader) {
+      showToast('Hanya Pemimpin / Ketua Klan yang berhak mengklaim 5 Relik harian klan!');
+      return { ok: false, message: 'Hanya untuk Ketua Klan', shardsAdded: 0 };
+    }
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const storageKey = getDailyRelicStorageKey();
+    if (typeof window !== 'undefined' && window.localStorage.getItem(storageKey) === todayKey) {
+      showToast('Jatah 5 Relik klan harian sudah diklaim hari ini. Kembali lagi besok!');
+      return { ok: false, message: 'Sudah diklaim hari ini', shardsAdded: 0 };
+    }
+
+    fantasySoundEngine.playQuestComplete();
+    setRepo((prev) => ({
+      ...prev,
+      relicShards: (prev.relicShards || 0) + 5,
+    }));
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(storageKey, todayKey);
+    }
+
+    showToast('Berhasil mengklaim +5 Pecahan Relik harian klan!');
+    return { ok: true, message: 'Berhasil mengklaim +5 Relik!', shardsAdded: 5 };
+  }, [activeAccount.id, allClans, getDailyRelicStorageKey, repo.joinedClanId, showToast]);
 
   const reinforceClanDistrict = useCallback(
     (_clanId: string) => {
@@ -2898,6 +3507,8 @@ export const NuenimeRpgProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         relicShards: repo.relicShards,
         relicLevels: repo.relicLevels,
         upgradeClanRelic,
+        claimDailyRelics,
+        isDailyRelicClaimed,
         districtInfluence: repo.districtInfluence,
         reinforceClanDistrict,
         activeRoute,

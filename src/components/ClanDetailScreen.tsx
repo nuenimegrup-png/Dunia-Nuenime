@@ -20,6 +20,7 @@ import {
   LogOut,
   Clock,
   AlertTriangle,
+  ChevronRight,
 } from 'lucide-react';
 import { Clan, WorldCity } from '../types/nuenime';
 import { ClanEmblemIcon, CityEmblemBadge } from './icons/NuenimeAssets';
@@ -92,6 +93,8 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
     relicShards,
     relicLevels,
     upgradeClanRelic,
+    claimDailyRelics,
+    isDailyRelicClaimed,
     districtInfluence,
     reinforceClanDistrict,
     getClanTotalScore,
@@ -103,7 +106,10 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [isMissionsOpen, setIsMissionsOpen] = useState(false);
+  const [isDailyClaimed, setIsDailyClaimed] = useState(isDailyRelicClaimed());
 
+  const liveClan = allClans.find((c) => c.id === clan.id) ?? clan;
   const isJoined = joinedClanId === clan.id;
   const currentJoinedClan = joinedClanId ? allClans.find((c) => c.id === joinedClanId) : undefined;
   const pendingRequest = getUserJoinRequest(clan.id);
@@ -219,20 +225,26 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-[#07090E] text-slate-100">
       {/* Sticky Header */}
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-[#0B0E14]/95 px-3.5 py-3 backdrop-blur-xl shrink-0 shadow-lg">
+      <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] bg-[#0A0D14]/90 px-3.5 py-2.5 backdrop-blur-xl shrink-0 shadow-sm z-20">
         <button
           type="button"
           onClick={onBack}
-          className="flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-slate-200 transition-colors hover:border-white/20 hover:bg-white/[0.08] active:scale-95 whitespace-nowrap shrink-0"
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 text-xs font-medium text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white active:scale-95 whitespace-nowrap shrink-0"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           <span>Kembali</span>
         </button>
 
         <div className="min-w-0 text-right">
-          <div className="font-display truncate text-sm font-bold text-white tracking-wide">{clan.name}</div>
-          <div className="mt-0.5 font-mono text-[10.5px] text-slate-400 tabular-nums">
-            EXP Klan: <span className="font-bold text-sky-400">{totalClanExp.toLocaleString('id-ID')}</span> · <span className="font-bold text-amber-400">{relicShards}</span> Pecahan Relik
+          <div className="truncate text-xs font-bold text-white tracking-wide font-sans">{liveClan.name}</div>
+          <div className="mt-0.5 font-mono text-[10px] text-slate-400 tabular-nums">
+            EXP: <span className="font-semibold text-slate-200">{totalClanExp.toLocaleString('id-ID')}</span>
+            {isJoined && (
+              <>
+                <span className="mx-1.5 text-white/20">|</span>
+                Relik: <span className="font-semibold text-amber-300/90">{relicShards}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -245,25 +257,25 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
         />
       ) : (
       /* Scrollable Clan Profile Content */
-      <div className="nuenime-scroll flex-1 space-y-4 overflow-y-auto pb-5">
+      <div className="nuenime-scroll flex-1 space-y-3.5 overflow-y-auto pb-6">
         {/* Hero Crest Pedestal Showcase */}
-        <div className="relative flex flex-col items-center justify-end overflow-hidden border-b border-slate-800 px-4 pt-6 pb-5 text-center">
+        <div className="relative flex flex-col items-center justify-end overflow-hidden border-b border-white/[0.06] px-4 pt-5 pb-5 text-center bg-[#090C13]">
           <img
             src="/assets/nuenime/clan_emblem_pedestal.webp"
             alt=""
             referrerPolicy="no-referrer"
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-35"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-luminosity"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070d19] via-[#070d19]/65 to-slate-950/40" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#090C13] via-[#090C13]/70 to-transparent" />
 
-          <div className="relative z-10 flex flex-col items-center">
+          <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
             <div className="relative">
-              <div className="rounded-full p-2">
+              <div className="rounded-2xl p-1.5 bg-black/40 border border-white/[0.08] shadow-lg backdrop-blur-sm">
                 <ClanEmblemIcon
                   variant={clan.emblemVariant}
                   accentColor={clan.accentColor}
                   logoUrl={clan.logoUrl}
-                  size={76}
+                  size={72}
                 />
               </div>
 
@@ -275,49 +287,54 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                     setEditLogoUrl(clan.logoUrl ?? '');
                     setIsEditLogoModalOpen(true);
                   }}
-                  className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-sky-300 hover:border-sky-400 hover:text-white active:scale-95 transition-all"
+                  className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-slate-900 text-slate-300 hover:text-white hover:border-white/40 active:scale-95 transition-all shadow-md"
                   title="Atur / Ubah Logo Foto Klan"
                 >
-                  <Camera className="h-3.5 w-3.5" />
+                  <Camera className="h-3 w-3" />
                 </button>
               )}
             </div>
 
-            <div className="mt-2 text-[11px] font-medium text-sky-300">
-              {clan.reputationRank} · [{clan.tag}] · Level Klan {clan.level}
+            {/* Pill Tag & Info */}
+            <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10.5px] font-medium text-slate-300 backdrop-blur-sm">
+              <span className="text-slate-400">{clan.reputationRank}</span>
+              <span className="text-white/20">·</span>
+              <span className="font-mono text-slate-200">[{clan.tag}]</span>
+              <span className="text-white/20">·</span>
+              <span className="text-amber-400 font-semibold">Lv. {clan.level}</span>
             </div>
-            <h1 className="font-display mt-0.5 text-xl font-bold tracking-wide text-white">
+
+            <h1 className="mt-1 text-lg font-bold tracking-tight text-white sm:text-xl">
               {clan.name}
             </h1>
-            <p className="mt-1 max-w-xs text-xs italic text-slate-300">
+            <p className="mt-0.5 max-w-xs text-[11px] italic text-slate-400 leading-snug">
               &ldquo;{clan.motto}&rdquo;
             </p>
 
-            {/* Precision 2-Row Clan Actions:
-                Baris 1: [Klan Aktif Anda / Gabung Klan] | [Kota {cityName}]
-                Baris 2: [Gudang Senjata & Toko Logistik] (Full Width)
-            */}
-            <div className="mt-3.5 w-full max-w-sm space-y-2">
-              {/* Baris Pertama: Tombol Keanggotaan & Kota */}
+            {/* Clean & Cohesive Actions Bar */}
+            <div className="mt-3.5 w-full space-y-2">
               {isJoined ? (
                 <div className="grid grid-cols-2 gap-2 w-full">
-                  <div className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-400/60 bg-emerald-950/70 px-3 text-xs font-bold text-emerald-200 shadow-sm">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-300 shrink-0" />
+                  <div className="flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-300">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
                     <span className="truncate">Klan Aktif Anda</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setIsLeaveModalOpen(true)}
-                    className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-950/40 px-3 text-xs font-bold text-rose-300 hover:border-rose-400 hover:bg-rose-900/50 active:scale-95 transition-all shadow-sm"
+                    className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs font-medium text-slate-300 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-300 active:scale-95 transition-all"
                   >
-                    <LogOut className="h-4 w-4 text-rose-400 shrink-0" />
+                    <LogOut className="h-3.5 w-3.5 opacity-70" />
                     <span className="truncate">Keluar Klan</span>
                   </button>
                 </div>
               ) : pendingRequest ? (
                 <div className="grid grid-cols-2 gap-2 w-full">
-                  <div className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-amber-400/60 bg-amber-950/60 px-2.5 text-[11px] font-bold text-amber-200 shadow-sm">
+                  <div className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-2.5 text-[11px] font-medium text-amber-300">
                     <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0 animate-pulse" />
                     <span className="truncate">Menunggu Konfirmasi</span>
                   </div>
@@ -330,10 +347,22 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                       setIsSubmittingAction(false);
                     }}
                     disabled={isSubmittingAction}
-                    className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 text-xs font-semibold text-slate-300 hover:border-rose-500/60 hover:text-rose-300 active:scale-95 transition-all shadow-sm"
+                    className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs font-medium text-slate-300 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-300 active:scale-95 transition-all"
                   >
-                    <X className="h-4 w-4 text-slate-400 shrink-0" />
+                    <X className="h-3.5 w-3.5 opacity-70" />
                     <span className="truncate">Batalkan</span>
+                  </button>
+                </div>
+              ) : joinedClanId && joinedClanId !== clan.id ? (
+                /* Pengguna sudah punya klan lain -> Tombol Gabung Klan di-hide */
+                <div className="w-full">
+                  <button
+                    type="button"
+                    onClick={() => onNavigateToCity(clan.cityId)}
+                    className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs font-medium text-slate-300 hover:bg-white/[0.07] hover:text-white active:scale-95 transition-all"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate">Kota {clan.cityName}</span>
                   </button>
                 </div>
               ) : (
@@ -341,233 +370,309 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                   <button
                     type="button"
                     onClick={async () => {
-                      if (joinedClanId && joinedClanId !== clan.id) {
-                        setIsSwitchModalOpen(true);
-                        return;
-                      }
                       setIsSubmittingAction(true);
-                      const res = await requestJoinClan(clan.id);
-                      if (res.requiresLeaveFirst) {
-                        setIsSwitchModalOpen(true);
-                      }
+                      await requestJoinClan(clan.id);
                       setIsSubmittingAction(false);
                     }}
                     disabled={isSubmittingAction}
-                    className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-sky-300/65 bg-gradient-to-r from-sky-600 to-indigo-700 px-3 text-xs font-bold text-white shadow-md active:scale-95 transition-all"
+                    className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-sky-400/30 bg-sky-600/90 px-3 text-xs font-semibold text-white shadow-sm hover:bg-sky-500 active:scale-95 transition-all"
                   >
-                    <Shield className="h-4 w-4 shrink-0" />
+                    <Shield className="h-3.5 w-3.5 shrink-0" />
                     <span className="truncate">Gabung Klan</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => onNavigateToCity(clan.cityId)}
-                    className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 text-xs font-semibold text-sky-200 hover:border-sky-400/60 active:scale-95 transition-all shadow-sm"
+                    className="flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs font-medium text-slate-300 hover:bg-white/[0.07] hover:text-white active:scale-95 transition-all"
                   >
-                    <MapPin className="h-4 w-4 text-sky-300 shrink-0" />
+                    <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                     <span className="truncate">Kota {clan.cityName}</span>
                   </button>
                 </div>
               )}
 
-              {/* Baris Kedua: Tombol Gudang Senjata & Toko Logistik Presisi */}
-              <button
-                type="button"
-                onClick={() => setIsShopOpen(true)}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-400/60 bg-gradient-to-r from-amber-600/30 via-amber-500/20 to-amber-600/30 px-4 text-xs font-bold text-amber-200 hover:border-amber-400 hover:bg-amber-500/30 active:scale-95 transition-all shadow-md shadow-amber-950/40"
-              >
-                <ShoppingBag className="h-4 w-4 text-amber-300 shrink-0" />
-                <span>Gudang Senjata & Toko Logistik</span>
-              </button>
+              {/* Baris Kedua: Tombol Gudang Senjata & Logistik - HANYA UNTUK KLAN SENDIRI */}
+              {isJoined && (
+                <button
+                  type="button"
+                  onClick={() => setIsShopOpen(true)}
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-gradient-to-r from-white/[0.05] via-white/[0.08] to-white/[0.05] px-4 text-xs font-semibold text-slate-200 hover:border-amber-400/40 hover:text-amber-200 hover:bg-white/[0.1] active:scale-[0.98] transition-all shadow-sm"
+                >
+                  <ShoppingBag className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                  <span>Gudang Senjata & Toko Logistik</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="space-y-3.5 px-3.5">
-          {/* Quick Stats Row - Tepat 2 Kotak per Baris (2 Baris x 2 Kolom, Bebas Emoji) */}
-          <div className="grid grid-cols-2 gap-2.5">
+        <div className="space-y-3 px-3.5">
+          {/* Quick Stats Grid: 4 Kartu Seragam & Elegan */}
+          <div className="grid grid-cols-2 gap-2">
             {/* Kotak 1: Kapasitas Anggota */}
-            <div className="rounded-xl border border-slate-800/90 bg-slate-900/75 p-3 text-center flex flex-col justify-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400">
+            <div className="rounded-xl border border-white/[0.06] bg-[#0E131E]/90 p-3 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-slate-400">
                 <Users className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <span>Kapasitas Anggota</span>
               </div>
-              <div className="font-mono mt-1 text-sm font-bold text-white tabular-nums">
-                {clan.memberCount} / {clan.maxMembers}
+              <div className="mt-1.5 font-mono text-sm font-bold text-white tabular-nums">
+                {clan.memberCount} <span className="text-[11px] font-normal text-slate-500">/ {clan.maxMembers}</span>
               </div>
             </div>
 
             {/* Kotak 2: Kas Koin Klan */}
-            <div className="rounded-xl border border-amber-500/35 bg-amber-950/25 p-3 text-center flex flex-col justify-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-amber-300 font-semibold">
-                <Coins className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+            <div className="rounded-xl border border-white/[0.06] bg-[#0E131E]/90 p-3 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-slate-400">
+                <Coins className="h-3.5 w-3.5 text-amber-400/80 shrink-0" />
                 <span>Kas Koin Klan</span>
               </div>
-              <div className="font-mono mt-1 text-sm font-bold text-amber-200 tabular-nums">
-                {(clan.coins ?? 1000).toLocaleString('id-ID')} Coin
+              <div className="mt-1.5 font-mono text-sm font-bold text-white tabular-nums">
+                {(liveClan.coins ?? 1000).toLocaleString('id-ID')} <span className="text-[11px] font-normal text-amber-400/80">Coin</span>
               </div>
             </div>
 
             {/* Kotak 3: Kendali Distrik */}
-            <div className="rounded-xl border border-slate-800/90 bg-slate-900/75 p-3 text-center flex flex-col justify-center">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400">
+            <div className="rounded-xl border border-white/[0.06] bg-[#0E131E]/90 p-3 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-slate-400">
                 <Compass className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <span>Kendali Distrik</span>
               </div>
-              <div className="font-mono mt-1 text-sm font-bold text-amber-300 tabular-nums">
+              <div className="mt-1.5 font-mono text-sm font-bold text-white tabular-nums">
                 {influence}%
               </div>
             </div>
 
             {/* Kotak 4: Total EXP Klan */}
-            <div className="rounded-xl border border-slate-800/90 bg-slate-900/75 p-3 text-center flex flex-col justify-center">
-              <div className="flex items-center justify-center text-[11px] text-slate-400">
+            <div className="rounded-xl border border-white/[0.06] bg-[#0E131E]/90 p-3 flex flex-col justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-medium text-slate-400">
+                <Shield className="h-3.5 w-3.5 text-sky-400/80 shrink-0" />
                 <span>Total EXP Klan</span>
               </div>
-              <div className="font-mono mt-1 text-sm font-bold text-sky-300 tabular-nums">
-                {totalClanExp.toLocaleString('id-ID')} EXP
+              <div className="mt-1.5 font-mono text-sm font-bold text-white tabular-nums">
+                {totalClanExp.toLocaleString('id-ID')} <span className="text-[11px] font-normal text-sky-400/80">EXP</span>
               </div>
             </div>
           </div>
 
-          {/* Artefak Pusaka & Buff Elemen Klan */}
-          <div className="rounded-2xl border border-amber-400/35 bg-gradient-to-br from-slate-900/95 via-slate-900/85 to-amber-950/25 p-3.5 space-y-2.5">
+          {/* Artefak Pusaka: Level Progression & Buff */}
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0E131E]/95 p-3.5 space-y-3">
+            {/* Header: Title & Level Badge */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-amber-300" />
-                <h2 className="font-display text-sm font-bold text-white">
-                  Artefak Pusaka & Buff Elemen
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-400">
+                  <Award className="h-3.5 w-3.5" />
+                </div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                  Level Artefak & Buff
                 </h2>
               </div>
-              <span className="font-mono text-xs font-bold text-amber-300 tabular-nums">
-                Level {currentRelicLevel}
-              </span>
+              <div className="flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 font-mono text-[11px] font-bold text-amber-300">
+                <span>Level {currentRelicLevel}</span>
+                <span className="text-[10px] text-amber-400/50">/ 10</span>
+              </div>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-950/75 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-[10.5px] font-medium text-amber-300">
-                    {relicInfo.relicTitle}
-                  </div>
-                  <div className="font-display text-sm font-bold text-white">
-                    {relicInfo.relicName}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] text-slate-400">Buff Aktif</div>
-                  <div className="font-mono text-xs font-bold text-emerald-300 tabular-nums">
+            {/* Level Stepper & Visual Progress Bar */}
+            <div className="rounded-xl border border-white/[0.05] bg-black/30 p-3 space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 font-medium text-slate-300">
+                  <Zap className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                  <span>Buff Aktif:</span>
+                  <span className="font-bold text-emerald-300 font-mono">
                     +{currentBuffBonus}% {relicInfo.elementBuffName}
-                  </div>
+                  </span>
+                </div>
+                {currentRelicLevel < 10 && (
+                  <span className="font-mono text-[11px] text-slate-400">
+                    Lv.+1: <strong className="text-emerald-400/80 font-normal">+{currentBuffBonus + relicInfo.bonusPerLevel}%</strong>
+                  </span>
+                )}
+              </div>
+
+              {/* 10-Segment Level Progression Track */}
+              <div className="grid grid-cols-10 gap-1 pt-0.5">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((step) => {
+                  const isAchieved = step <= currentRelicLevel;
+                  const isCurrent = step === currentRelicLevel;
+                  return (
+                    <div
+                      key={step}
+                      className={`h-2 rounded-full transition-all ${
+                        isCurrent
+                          ? 'bg-amber-400 ring-2 ring-amber-400/30 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                          : isAchieved
+                          ? 'bg-amber-500/70'
+                          : 'bg-white/[0.08]'
+                      }`}
+                      title={`Level ${step}`}
+                    />
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                <span>Lv. 1 ({relicInfo.baseBonusPercent}%)</span>
+                <span>Lv. 5</span>
+                <span>Lv. 10 ({relicInfo.baseBonusPercent + 9 * relicInfo.bonusPerLevel}%)</span>
+              </div>
+            </div>
+
+            {/* Relic Count & Action Buttons (Khusus Pemimpin Klan Pemilik) */}
+            {isJoined && isCurrentUserLeader ? (
+              <div className="flex flex-col gap-2 pt-0.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Pecahan Relik Tersedia:</span>
+                  <span className="font-mono text-xs font-bold text-slate-200">
+                    {relicShards} <span className="text-[10px] text-slate-400 font-normal">Relik</span>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Tombol Klaim 5 Relik Harian */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const res = claimDailyRelics();
+                      if (res.ok) {
+                        setIsDailyClaimed(true);
+                      }
+                    }}
+                    disabled={isDailyClaimed}
+                    className={`flex h-9 items-center justify-center gap-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 ${
+                      isDailyClaimed
+                        ? 'border-white/5 bg-white/[0.02] text-slate-500 cursor-not-allowed'
+                        : 'border-emerald-500/30 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25'
+                    }`}
+                    title={isDailyClaimed ? 'Sudah diklaim hari ini. Kembali besok!' : 'Klaim jatah 5 relik harian klan'}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span className="truncate">{isDailyClaimed ? 'Sudah Diklaim' : 'Klaim (+5 Relik)'}</span>
+                  </button>
+
+                  {/* Tombol Tingkatkan Level Artefak */}
+                  <button
+                    type="button"
+                    onClick={() => upgradeClanRelic(liveClan.id)}
+                    disabled={relicShards < upgradeShardCost || currentRelicLevel >= 10}
+                    className={`flex h-9 items-center justify-center gap-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 ${
+                      currentRelicLevel >= 10
+                        ? 'border-white/5 bg-white/[0.02] text-slate-500 cursor-not-allowed'
+                        : relicShards >= upgradeShardCost
+                        ? 'border-amber-400/40 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 shadow-sm'
+                        : 'border-white/10 bg-white/[0.03] text-slate-400'
+                    }`}
+                  >
+                    <ArrowUpCircle className="h-3.5 w-3.5 text-amber-400" />
+                    <span className="truncate">{currentRelicLevel >= 10 ? 'Level Maks' : `Tingkatkan (${upgradeShardCost})`}</span>
+                  </button>
+                </div>
+
+                {/* Keterangan Bonus Koin Real per Level-Up */}
+                <div className="flex items-center justify-between pt-0.5 px-0.5 text-[10.5px] text-amber-300/85">
+                  <span>Bonus Tiap Level:</span>
+                  <span className="font-semibold text-amber-300">+1.000 Kas Koin Klan</span>
                 </div>
               </div>
-              <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-300">
-                {relicInfo.lore}
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <div className="text-[11px] text-slate-300">
-                Pecahan Relik Anda:{' '}
-                <span className="font-mono font-bold text-amber-300 tabular-nums">
-                  {relicShards}
-                </span>
+            ) : isJoined && !isCurrentUserLeader ? (
+              <div className="rounded-xl border border-white/[0.06] bg-black/25 p-2.5 text-center text-xs text-slate-400">
+                Hanya <span className="font-semibold text-slate-200">Pemimpin Klan</span> yang berhak mengklaim relik dan menempa Artefak Pusaka.
               </div>
-
-              <button
-                type="button"
-                onClick={() => upgradeClanRelic(clan.id)}
-                className="flex min-h-[36px] items-center gap-1.5 rounded-xl border border-amber-400/55 bg-amber-500/20 px-3.5 py-1.5 text-xs font-bold text-amber-100 hover:bg-amber-500/30 active:scale-95 whitespace-nowrap shrink-0"
-              >
-                <ArrowUpCircle className="h-4 w-4 text-amber-300" />
-                <span>Tingkatkan Artefak ({upgradeShardCost} Relik)</span>
-              </button>
-            </div>
+            ) : (
+              <div className="rounded-xl border border-white/[0.06] bg-black/25 p-2.5 text-center text-xs text-slate-400">
+                Artefak Pusaka ini dikelola khusus oleh Pemimpin klan <span className="font-semibold text-slate-200">{liveClan.name}</span>.
+              </div>
+            )}
           </div>
 
-          {/* Penguasaan Distrik Markas & Misi Simulasi Klan */}
-          <div className="rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3.5 space-y-2.5">
+          {/* Penguasaan Distrik Markas & Misi Klan */}
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0E131E]/95 p-3.5 space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <div className="text-[10.5px] text-sky-300">Distrik Markas Kota {clan.cityName}</div>
-                <h2 className="font-display text-sm font-bold text-white">
-                  {clan.strongholdDistrict} (Kendali {influence}%)
+                <div className="text-[10px] uppercase tracking-wider text-slate-400">Distrik Markas Kota {clan.cityName}</div>
+                <h2 className="text-xs font-bold text-white mt-0.5">
+                  {clan.strongholdDistrict} · Kendali {influence}%
                 </h2>
               </div>
-              <div className="flex items-center rounded-xl border border-sky-400/40 bg-sky-950/60 px-3 py-1.5 font-mono text-[10.5px] font-bold text-sky-200 shrink-0">
-                <span>EXP Realtime</span>
+              <div className="flex items-center rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 font-mono text-[10px] text-slate-300 shrink-0">
+                <span>Realtime</span>
               </div>
             </div>
 
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
               <div
-                className="h-full transition-all duration-300"
-                style={{ width: `${influence}%`, backgroundColor: clan.accentColor }}
+                className="h-full transition-all duration-300 rounded-full bg-sky-400"
+                style={{ width: `${influence}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-[10.5px] text-slate-400">
+            <div className="flex items-center justify-between text-[10px] text-slate-400">
               <span>
-                Kontribusi Distrik: <span className="font-mono text-sky-300 font-bold">{clan.totalExp.toLocaleString('id-ID')}</span> / {Math.max(1000, (clan.level || 1) * 1000).toLocaleString('id-ID')} EXP
+                Kontribusi Distrik: <span className="font-mono text-slate-200 font-semibold">{clan.totalExp.toLocaleString('id-ID')}</span> / {Math.max(1000, (clan.level || 1) * 1000).toLocaleString('id-ID')} EXP
               </span>
-              <span className="font-mono text-emerald-400">Otomatis dari APK</span>
             </div>
 
-            {/* Misi Aktivitas Real-Time Komunitas Klan (Tanpa Simulasi) */}
-            <div className="space-y-2 pt-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-slate-200">
-                  Misi & Aktivitas Komunitas Klan ({clanMissions.length})
+            {/* Misi Aktivitas Real-Time Komunitas Klan (Collapsible Buka/Tutup) */}
+            <div className="pt-1.5 border-t border-white/[0.05]">
+              <button
+                type="button"
+                onClick={() => setIsMissionsOpen((prev) => !prev)}
+                className="flex w-full items-center justify-between gap-2 py-1 text-left group transition-all"
+              >
+                <div className="flex items-center gap-1.5">
+                  <ChevronRight
+                    className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${
+                      isMissionsOpen ? 'rotate-90 text-slate-200' : 'group-hover:text-slate-300'
+                    }`}
+                  />
+                  <span className="text-[11px] font-semibold text-slate-300 group-hover:text-white transition-colors">
+                    Misi & Aktivitas Komunitas ({clanMissions.length})
+                  </span>
+                </div>
+                <span className="font-mono text-[10px] text-slate-400">
+                  {isMissionsOpen ? 'Tutup' : 'Lihat Misi'}
                 </span>
-                <span className="flex items-center rounded-md bg-emerald-950/80 px-2 py-0.5 font-mono text-[9px] font-bold text-emerald-300 border border-emerald-500/40">
-                  <span>AKTIVITAS REAL NUENIME</span>
-                </span>
-              </div>
-              <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                Aktivitas nyata Anda di Nuenime otomatis menyumbang EXP langsung ke kontribusi pribadi, klan, dan level kota.
-              </p>
+              </button>
 
-              <div className="space-y-2 mt-2">
-                {clanMissions.map((msn) => (
-                  <div
-                    key={msn.id}
-                    className="flex items-center justify-between gap-2.5 rounded-xl border border-slate-800 bg-slate-950/70 p-2.5 sm:p-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="font-display text-xs font-bold text-white truncate">
-                        {msn.title}
+              {isMissionsOpen && (
+                <div className="space-y-1.5 mt-2 transition-all">
+                  {clanMissions.map((msn) => (
+                    <div
+                      key={msn.id}
+                      className="flex items-center justify-between gap-2.5 rounded-xl border border-white/[0.05] bg-black/20 p-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-semibold text-slate-200 truncate">
+                          {msn.title}
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          +{msn.rewardExp} EXP klan & distrik
+                        </div>
                       </div>
-                      <div className="text-[10.5px] text-slate-400 mt-0.5">
-                        +{msn.rewardExp} EXP (Anggota → Klan → Kota {clan.cityName})
+
+                      <div className="text-right shrink-0">
+                        <span className="font-mono text-[11px] font-semibold text-sky-400/90">
+                          +{msn.rewardExp} EXP
+                        </span>
                       </div>
                     </div>
-
-                    {/* Status Otomatis dari APK (Murni Anti-Cheat, Tanpa Tombol Manual) */}
-                    <div className="flex flex-col items-end shrink-0 text-right">
-                      <div className="inline-flex items-center rounded-lg border border-sky-400/40 bg-sky-950/60 px-2.5 py-1 font-mono text-[10.5px] font-bold text-sky-200">
-                        <span>Otomatis APK</span>
-                      </div>
-                      <span className="text-[9.5px] text-emerald-400 font-medium mt-0.5">
-                        Sinkron Real-time
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Leader Highlight Card */}
-          <div className="rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3.5">
-            <div className="text-[11px] font-semibold text-amber-300">Pemimpin Klan</div>
-            <div className="mt-1.5 flex items-center justify-between gap-3">
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0E131E]/95 p-3.5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pemimpin Klan</div>
+            <div className="mt-2 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 {/* Avatar & Border Pembuat / Pemimpin Klan */}
-                <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+                <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
                   <div
-                    className={`relative h-11 w-11 overflow-hidden rounded-full bg-gradient-to-tr from-sky-600 via-indigo-600 to-purple-700 flex items-center justify-center ${
+                    className={`relative h-10 w-10 overflow-hidden rounded-full bg-slate-800 flex items-center justify-center ${
                       leaderBorderMeta?.assetUrl
                         ? ''
-                        : 'ring-2 ring-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.3)]'
+                        : 'ring-1 ring-white/20'
                     }`}
                   >
                     {leaderAvatar ? (
@@ -580,7 +685,7 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                         }}
                       />
                     ) : (
-                      <span className="font-display text-sm font-bold text-white uppercase">
+                      <span className="text-xs font-bold text-white uppercase">
                         {clan.leaderName.charAt(0) || 'P'}
                       </span>
                     )}
@@ -592,10 +697,10 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                       src={leaderBorderMeta.assetUrl}
                       alt=""
                       style={{
-                        width: `${Math.round(44 / (leaderBorderMeta.innerRatio || 0.74))}px`,
-                        height: `${Math.round(44 / (leaderBorderMeta.innerRatio || 0.74))}px`,
+                        width: `${Math.round(40 / (leaderBorderMeta.innerRatio || 0.74))}px`,
+                        height: `${Math.round(40 / (leaderBorderMeta.innerRatio || 0.74))}px`,
                       }}
-                      className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain z-10 select-none drop-shadow-[0_0_6px_rgba(251,191,36,0.4)]"
+                      className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain z-10 select-none"
                       onError={(e) => {
                         (e.currentTarget as HTMLElement).style.display = 'none';
                       }}
@@ -603,10 +708,10 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                   )}
                 </div>
                 <div>
-                  <div className="font-display text-sm font-bold text-white">
+                  <div className="text-xs font-bold text-white">
                     {clan.leaderName}
                   </div>
-                  <div className="text-xs text-slate-400">{clan.leaderTitle}</div>
+                  <div className="text-[11px] text-slate-400">{clan.leaderTitle}</div>
                 </div>
               </div>
 
@@ -614,54 +719,33 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => onNavigateToCity(city.id)}
-                  className="flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-950/80 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 hover:border-sky-400/50"
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1 text-[11px] font-medium text-slate-300 hover:bg-white/[0.07] hover:text-white transition-colors"
                 >
-                  <CityEmblemBadge cityId={city.id} material={city.material} size={20} />
+                  <CityEmblemBadge cityId={city.id} material={city.material} size={18} />
                   <span>
-                    {city.name} (Lv.{city.level})
+                    {city.name}
                   </span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* Deskripsi & Sejarah Klan */}
-          <div className="rounded-2xl border border-slate-800/90 bg-slate-900/70 p-3.5 space-y-2">
-            <h2 className="font-display text-sm font-bold text-white">Profil & Sejarah Klan</h2>
-            <p className="text-xs leading-relaxed text-slate-300">{clan.description}</p>
-            <p className="text-xs leading-relaxed text-slate-400">{clan.historyLore}</p>
-
-            <div className="mt-3 space-y-1.5 border-t border-slate-800 pt-2.5 text-xs">
-              <div className="flex items-center gap-2 text-slate-300">
-                <MapPin className="h-3.5 w-3.5 text-sky-300 shrink-0" />
-                <span>Markas Distrik: {clan.strongholdDistrict}</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <Compass className="h-3.5 w-3.5 text-emerald-300 shrink-0" />
-                <span>Spesialisasi: {clan.specialization}</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-300">
-                <Calendar className="h-3.5 w-3.5 text-purple-300 shrink-0" />
-                <span>Era Berdiri: {clan.foundedEra}</span>
-              </div>
-            </div>
-          </div>
 
           {/* Daftar Anggota & Kontribusi EXP */}
-          <div className="rounded-2xl border border-slate-800/90 bg-slate-900/70 p-3.5">
+          <div className="rounded-2xl border border-white/[0.07] bg-[#0E131E]/95 p-3.5">
             <div className="mb-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-slate-300" />
-                <h2 className="font-display text-sm font-bold text-white">
-                  Daftar Anggota & Kontribusi EXP
+                <Users className="h-3.5 w-3.5 text-slate-400" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Daftar Anggota ({clan.memberCount})
                 </h2>
               </div>
-              <span className="font-mono text-[11px] text-slate-400 tabular-nums">
-                {clan.memberCount} / {clan.maxMembers} Anggota
+              <span className="font-mono text-[10.5px] text-slate-400 tabular-nums">
+                Kapasitas {clan.maxMembers}
               </span>
             </div>
 
-            <div className="space-y-2 mt-2">
+            <div className="space-y-1.5 mt-2">
               {sortedMembers.map((member, index) => {
                 const isCurrentUser = member.userId === activeAccount.id;
                 const avatar = isCurrentUser
@@ -694,13 +778,13 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                 return (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between gap-2 rounded-2xl border border-slate-800/70 bg-transparent p-2.5 sm:p-3 transition-all"
+                    className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.05] bg-black/20 p-2.5 transition-colors hover:border-white/10"
                   >
                     {/* Sisi Kiri: Ranking, Avatar + Border, Nama & Badges */}
-                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {/* Ranking Number */}
                       <span
-                        className={`font-mono text-xs font-bold shrink-0 w-4 text-center ${
+                        className={`font-mono text-[11px] font-bold shrink-0 w-4 text-center ${
                           index === 0
                             ? 'text-amber-400'
                             : index === 1
@@ -713,15 +797,15 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                         #{index + 1}
                       </span>
 
-                      {/* Avatar Bulat dengan Border Overlay Presisi */}
-                      <div className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center">
+                      {/* Avatar Bulat */}
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
                         <div
-                          className={`relative h-10 w-10 overflow-hidden rounded-full bg-transparent flex items-center justify-center ${
+                          className={`relative h-9 w-9 overflow-hidden rounded-full bg-slate-800 flex items-center justify-center ${
                             resolvedBorder
                               ? ''
                               : isLeader
-                              ? 'ring-2 ring-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.3)]'
-                              : 'ring-1.5 ring-slate-700'
+                              ? 'ring-1 ring-amber-400/60'
+                              : 'ring-1 ring-white/10'
                           }`}
                         >
                           {avatar ? (
@@ -734,22 +818,22 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                               }}
                             />
                           ) : (
-                            <span className="font-display text-sm font-bold text-white uppercase">
+                            <span className="text-xs font-bold text-white uppercase">
                               {member.name.charAt(0) || 'A'}
                             </span>
                           )}
                         </div>
 
-                        {/* Border Avatar Presisi Konsentris */}
+                        {/* Border Avatar */}
                         {resolvedBorder && (
                           <img
                             src={resolvedBorder}
                             alt=""
                             style={{
-                              width: `${Math.round(40 / 0.74)}px`,
-                              height: `${Math.round(40 / 0.74)}px`,
+                              width: `${Math.round(36 / 0.74)}px`,
+                              height: `${Math.round(36 / 0.74)}px`,
                             }}
-                            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain z-10 select-none drop-shadow-[0_0_6px_rgba(251,191,36,0.35)]"
+                            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain z-10 select-none"
                             onError={(e) => {
                               (e.currentTarget as HTMLElement).style.display = 'none';
                             }}
@@ -757,46 +841,42 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                         )}
                       </div>
 
-                      {/* Info Nama, Verifikasi & Badge Role Sesuai Mockup Gambar 2 */}
+                      {/* Info Nama, Verifikasi & Badge Role */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="truncate text-xs sm:text-sm font-bold text-white">
+                          <span className="truncate text-xs font-semibold text-white">
                             {member.name}
                           </span>
                           {isLeader && (
                             <span
-                              title="Pemimpin Terverifikasi"
-                              className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white shadow-sm shadow-rose-950/60"
+                              title="Pemimpin Klan"
+                              className="inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full bg-amber-500 text-slate-950 font-bold"
                             >
                               <Check className="h-2 w-2 stroke-[3]" />
                             </span>
                           )}
                         </div>
 
-                        {/* Baris Badge: Level + Role Klan Sesuai Gambar 2 */}
-                        <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                          {/* Badge Level Akun */}
-                          <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/50 bg-transparent px-1.5 py-0.5 font-mono text-[9px] font-bold text-emerald-300 shrink-0">
-                            <Shield className="h-2.5 w-2.5 text-emerald-400 shrink-0" />
-                            <span>Lv. {formattedLevel}</span>
+                        {/* Baris Badge: Level + Role */}
+                        <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.03] px-1 py-0.2 font-mono text-[9px] font-medium text-slate-300 shrink-0">
+                            Lv. {formattedLevel}
                           </span>
 
-                          {/* Badge Role / Tag Pemimpin Klan Sesuai Role Klan */}
                           {isLeader ? (
-                            <span className="inline-flex items-center rounded-md border border-purple-500/60 bg-transparent px-1.5 py-0.5 font-mono text-[8.5px] font-bold text-purple-300 uppercase tracking-wider shrink-0">
-                              Pemimpin Klan
+                            <span className="inline-flex items-center rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.2 font-mono text-[8.5px] font-semibold text-amber-300 uppercase tracking-wider shrink-0">
+                              Pemimpin
                             </span>
                           ) : isCoLeader ? (
-                            <span className="inline-flex items-center rounded-md border border-indigo-500/60 bg-transparent px-1.5 py-0.5 font-mono text-[8.5px] font-bold text-indigo-300 uppercase tracking-wider shrink-0">
-                              Wakil Ketua
+                            <span className="inline-flex items-center rounded border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.2 font-mono text-[8.5px] font-semibold text-sky-300 uppercase tracking-wider shrink-0">
+                              Wakil
                             </span>
                           ) : (
-                            <span className="inline-flex items-center rounded-md border border-slate-700 bg-transparent px-1.5 py-0.5 font-mono text-[8.5px] font-bold text-slate-300 uppercase tracking-wider shrink-0">
+                            <span className="inline-flex items-center rounded border border-white/10 bg-white/[0.02] px-1.5 py-0.2 font-mono text-[8.5px] font-medium text-slate-400 uppercase tracking-wider shrink-0">
                               Anggota
                             </span>
                           )}
 
-                          {/* Afinitas Elemen / Info Tambahan */}
                           {member.elementAffinity && (
                             <span className="text-[9px] text-slate-400 font-mono shrink-0 hidden xs:inline">
                               · {member.elementAffinity}
@@ -806,15 +886,14 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
                       </div>
                     </div>
 
-                    {/* Sisi Kanan: Kontribusi EXP Presisi di Mobile */}
+                    {/* Sisi Kanan: Kontribusi EXP */}
                     <div className="shrink-0 text-right pl-1.5 flex flex-col items-end justify-center">
-                      <div className="inline-flex items-center gap-1 font-mono text-xs sm:text-sm font-bold text-amber-300 tabular-nums">
-                        <Award className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                      <div className="inline-flex items-center gap-1 font-mono text-xs font-bold text-slate-200 tabular-nums">
                         <span>{member.contributionScore.toLocaleString('id-ID')}</span>
-                        <span className="text-[10px] text-amber-400/90 font-bold">EXP</span>
+                        <span className="text-[10px] text-slate-400 font-normal">EXP</span>
                       </div>
-                      <div className="text-[9px] text-slate-400 font-medium whitespace-nowrap mt-0.5">
-                        Kontribusi Klan
+                      <div className="text-[9px] text-slate-400 font-normal whitespace-nowrap">
+                        Kontribusi
                       </div>
                     </div>
                   </div>
@@ -1036,9 +1115,10 @@ export const ClanDetailScreen: React.FC<ClanDetailScreenProps> = ({
         </div>
       )}
 
-      {/* Modal Toko Senjata & Gudang Inventory Klan */}
+      {/* Modal Toko Senjata & Gudang Inventory Klan (Khusus Klan Sendiri) */}
       <ClanCombatShopModal
-        isOpen={isShopOpen}
+        clan={isJoined ? liveClan : null}
+        isOpen={isShopOpen && isJoined}
         onClose={() => setIsShopOpen(false)}
       />
     </div>

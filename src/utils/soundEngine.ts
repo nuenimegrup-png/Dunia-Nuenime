@@ -127,6 +127,10 @@ class FantasySoundEngine {
     this.playQuestComplete();
   }
 
+  public playLevelUp() {
+    this.playQuestComplete();
+  }
+
   /** Suara gemerincing koin saat pembelian / reward kemenangan */
   public playCoinReceive() {
     this.playTone(987.77, 0.12, 'sine', 0.06, 0);

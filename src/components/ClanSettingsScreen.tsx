@@ -22,6 +22,7 @@ import {
   UserPlus,
   AlertTriangle,
   Clock,
+  RefreshCw,
 } from 'lucide-react';
 import { Clan, ClanRoleTitle, WorldCity, BottomNavTab } from '../types/nuenime';
 import { ClanEmblemIcon } from './icons/NuenimeAssets';
@@ -130,7 +131,17 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
     respondJoinRequest,
     disbandClan,
     transferClanLeadership,
+    refreshClanData,
   } = useNuenimeRpg();
+
+  // Otomatis refresh data klan & permintaan bergabung saat layar dibuka dan polling tiap 4 detik
+  useEffect(() => {
+    void refreshClanData();
+    const timer = setInterval(() => {
+      void refreshClanData();
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [refreshClanData]);
 
   // Ambil klan aktif pengguna
   const currentClan = clans.find((c) => c.id === joinedClanId);
@@ -141,7 +152,12 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
 
   // Permintaan bergabung yang masuk ke klan ini
   const incomingRequests = currentClan
-    ? clanJoinRequests.filter((r) => r.clanId === currentClan.id && r.status === 'pending')
+    ? clanJoinRequests.filter(
+        (r) =>
+          (r.clanId === currentClan.id ||
+            (r.clanId && currentClan.id && r.clanId.trim().toLowerCase() === currentClan.id.trim().toLowerCase())) &&
+          r.status === 'pending'
+      )
     : [];
 
   // Modal State
@@ -224,9 +240,9 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
   const totalScore = getClanTotalScore(currentClan.id);
 
   return (
-    <div className="nuenime-scroll flex h-full w-full flex-col overflow-y-auto bg-[#070d19] px-3.5 py-3.5 pb-8 text-slate-100">
+    <div className="nuenime-scroll flex h-full w-full flex-col overflow-y-auto bg-[#080B10] px-3.5 py-3.5 pb-8 text-slate-100">
       {/* Header Utama Pengaturan Klan */}
-      <div className="rounded-2xl border border-slate-800/90 bg-[#0B0E14]/95 p-3.5">
+      <div className="rounded-2xl border border-white/[0.07] bg-[#0E131E]/95 p-3.5 shadow-xl backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative shrink-0">
@@ -240,10 +256,10 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wide">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                   Pengaturan Klan
                 </span>
-                <span className="rounded bg-sky-950/80 border border-sky-400/40 px-1.5 py-0.2 font-mono text-[9px] font-bold text-sky-200">
+                <span className="rounded border border-white/10 bg-white/[0.05] px-1.5 py-0.5 font-mono text-[9px] font-medium text-slate-300">
                   [{currentClan.tag}]
                 </span>
               </div>
@@ -251,9 +267,9 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                 {currentClan.name}
               </h1>
               <div className="flex items-center gap-2 text-[10.5px] text-slate-400 mt-0.5">
-                <span className="text-sky-300">Kota {currentClan.cityName}</span>
-                <span>·</span>
-                <span className="font-mono text-amber-300 font-bold">{totalScore.toLocaleString('id-ID')} EXP</span>
+                <span>Kota {currentClan.cityName}</span>
+                <span className="text-slate-600">·</span>
+                <span className="font-mono text-slate-200 font-semibold">{totalScore.toLocaleString('id-ID')} EXP</span>
               </div>
             </div>
           </div>
@@ -262,26 +278,26 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
             <button
               type="button"
               onClick={() => onOpenClanDetail(currentClan)}
-              className="flex h-8 items-center gap-1 rounded-xl border border-slate-700/80 bg-slate-900/90 px-2.5 text-[11px] font-semibold text-slate-200 hover:text-white shrink-0 active:scale-95"
+              className="flex h-8 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.08] hover:text-white shrink-0 active:scale-95 transition-all shadow-sm"
             >
               <span>Markas</span>
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
             </button>
           )}
         </div>
       </div>
 
       {/* SECTION 1: FORMULIR UBAH PROFIL & LOGO KLAN */}
-      <form onSubmit={handleSaveProfile} className="mt-3.5 space-y-3 rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3.5">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+      <form onSubmit={handleSaveProfile} className="mt-3.5 space-y-3.5 rounded-2xl border border-white/[0.07] bg-[#0E131E]/95 p-3.5 sm:p-4 shadow-xl backdrop-blur-xl">
+        <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
           <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-sky-400" />
-            <h2 className="font-display text-xs font-bold text-white uppercase tracking-wide">
+            <Settings className="h-4 w-4 text-slate-400" />
+            <h2 className="text-xs font-bold text-white uppercase tracking-wider">
               Pengaturan Profil & Identitas Klan
             </h2>
           </div>
           {isSavedRecently && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Tersimpan
             </span>
@@ -291,15 +307,15 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
         {/* Preview & Input Link Foto Logo Bulat */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <ImageIcon className="h-3.5 w-3.5 text-amber-400" />
+            <label className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+              <ImageIcon className="h-3.5 w-3.5 text-slate-400" />
               <span>Link Foto / Logo Bulat Klan</span>
             </label>
-            <span className="text-[10px] text-slate-400">(Format Gambar: .png / .jpg / .webp)</span>
+            <span className="text-[10px] text-slate-500">(PNG / JPG / WebP)</span>
           </div>
 
-          <div className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-2.5">
-            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-amber-400/80 bg-slate-900">
+          <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-black/40 p-2.5">
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-slate-900 shadow-inner">
               {logoUrl.trim() ? (
                 <img
                   src={logoUrl.trim()}
@@ -324,11 +340,11 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                 type="url"
                 value={logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://i.ibb.co.com/.../logo.png"
-                className="h-9 w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-400 focus:outline-none"
+                placeholder="https://.../logo.png"
+                className="h-9 w-full rounded-xl border border-white/10 bg-black/50 px-3 text-xs text-white placeholder-slate-500 focus:border-sky-500/50 focus:outline-none transition-colors"
               />
               <p className="text-[10px] text-slate-400">
-                Foto akan otomatis dijadikan logo bulat dengan bingkai emas klan.
+                Foto akan otomatis dijadikan logo bulat resmi klan.
               </p>
             </div>
           </div>
@@ -337,7 +353,7 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
         {/* Nama & Tag Klan */}
         <div className="grid grid-cols-3 gap-2.5">
           <div className="col-span-2">
-            <label className="mb-1 block text-xs font-semibold text-slate-300">
+            <label className="mb-1 block text-[11px] font-semibold text-slate-300">
               Nama Klan
             </label>
             <input
@@ -345,12 +361,12 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="h-9 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-xs text-white focus:border-sky-400 focus:outline-none"
+              className="h-9 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-xs text-white placeholder-slate-500 focus:border-sky-500/50 focus:outline-none transition-colors"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-300">
+            <label className="mb-1 block text-[11px] font-semibold text-slate-300">
               Tag Klan
             </label>
             <input
@@ -359,14 +375,14 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
               required
               value={tag}
               onChange={(e) => setTag(e.target.value.toUpperCase())}
-              className="h-9 w-full rounded-xl border border-slate-700 bg-slate-900 px-2.5 font-mono text-xs uppercase text-white focus:border-sky-400 focus:outline-none"
+              className="h-9 w-full rounded-xl border border-white/10 bg-black/40 px-2.5 font-mono text-xs uppercase text-white placeholder-slate-500 focus:border-sky-500/50 focus:outline-none transition-colors"
             />
           </div>
         </div>
 
         {/* Motto / Slogan Klan */}
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-300">
+          <label className="mb-1 block text-[11px] font-semibold text-slate-300">
             Moto / Slogan Klan
           </label>
           <input
@@ -374,26 +390,26 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
             value={motto}
             onChange={(e) => setMotto(e.target.value)}
             placeholder="Contoh: Demi kehormatan dan persaudaraan!"
-            className="h-9 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-xs text-white focus:border-sky-400 focus:outline-none"
+            className="h-9 w-full rounded-xl border border-white/10 bg-black/40 px-3 text-xs text-white placeholder-slate-500 focus:border-sky-500/50 focus:outline-none transition-colors"
           />
         </div>
 
         {/* Deskripsi & Lore Klan */}
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-300">
+          <label className="mb-1 block text-[11px] font-semibold text-slate-300">
             Deskripsi Profil Klan
           </label>
           <textarea
             rows={2}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 p-2.5 text-xs text-white focus:border-sky-400 focus:outline-none"
+            className="w-full rounded-xl border border-white/10 bg-black/40 p-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500/50 focus:outline-none transition-colors"
           />
         </div>
 
         <button
           type="submit"
-          className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-sky-400/50 bg-sky-600 text-xs font-bold text-white transition-all hover:bg-sky-500 active:scale-[0.98]"
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-sky-400/30 bg-sky-600/90 hover:bg-sky-500 text-xs font-semibold text-white transition-all shadow-sm active:scale-[0.98]"
         >
           <Save className="h-4 w-4" />
           <span>Simpan Perubahan Profil Klan</span>
@@ -402,14 +418,14 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
 
       {/* SECTION 1.5: PERMINTAAN BERGABUNG MASUK (KHUSUS PEMIMPIN/PENGELOLA) */}
       {isCurrentUserLeader && (
-        <div className="mt-3.5 space-y-3 rounded-2xl border border-sky-500/30 bg-[#0B0E14] p-3.5 shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <div className="mt-3.5 space-y-3 rounded-2xl border border-white/[0.07] bg-[#0E131E]/95 p-3.5 sm:p-4 shadow-xl backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                <UserPlus className="h-4 w-4" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.04] text-slate-400 border border-white/10">
+                <UserPlus className="h-3.5 w-3.5" />
               </div>
               <div>
-                <h2 className="font-display text-xs font-bold text-white uppercase tracking-wide">
+                <h2 className="text-xs font-bold text-white uppercase tracking-wider">
                   Permintaan Bergabung Masuk
                 </h2>
                 <p className="text-[10px] text-slate-400">
@@ -417,13 +433,23 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                 </p>
               </div>
             </div>
-            <span className="rounded-full border border-sky-400/50 bg-sky-950/60 px-2 py-0.5 font-mono text-[10px] font-bold text-sky-200 shrink-0">
-              {incomingRequests.length} Menunggu
-            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => void refreshClanData()}
+                title="Segarkan Permintaan Masuk"
+                className="flex h-6 w-6 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08] active:scale-95 transition-all"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </button>
+              <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 font-mono text-[10px] font-medium text-slate-300">
+                {incomingRequests.length} Menunggu
+              </span>
+            </div>
           </div>
 
           {incomingRequests.length === 0 ? (
-            <div className="py-4 text-center text-xs text-slate-500">
+            <div className="py-3 text-center text-xs text-slate-500">
               Tidak ada permintaan bergabung yang tertunda saat ini.
             </div>
           ) : (
@@ -431,10 +457,10 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
               {incomingRequests.map((req) => (
                 <div
                   key={req.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-slate-900/90 p-2.5 shadow-sm"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/30 p-2.5 shadow-sm"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-sky-400/50 bg-slate-800">
+                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-slate-800">
                       {req.avatarUrl ? (
                         <img
                           src={req.avatarUrl}
@@ -446,19 +472,20 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                           }}
                         />
                       ) : (
-                        <Shield className="h-4 w-4 text-sky-400" />
+                        <Shield className="h-4 w-4 text-slate-400" />
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs font-bold text-white">
+                      <div className="truncate text-xs font-semibold text-white">
                         {req.displayName || 'Petualang Nuenime'}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono text-[9px] font-bold text-emerald-300">
+                        <span className="font-mono text-[9.5px] font-semibold text-slate-400">
                           Lv. {req.level ?? 1}
                         </span>
-                        <span className="font-mono text-[9px] text-amber-300">
+                        <span className="text-slate-600">·</span>
+                        <span className="font-mono text-[9.5px] text-slate-400">
                           {(req.exp ?? 0).toLocaleString('id-ID')} EXP
                         </span>
                       </div>
@@ -469,17 +496,17 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                     <button
                       type="button"
                       onClick={() => respondJoinRequest(req.id, 'approve')}
-                      className="flex h-8 items-center gap-1 rounded-lg border border-emerald-500/50 bg-emerald-600/30 px-2.5 text-[11px] font-bold text-emerald-200 hover:bg-emerald-600 hover:text-white active:scale-95 transition-all shadow-sm"
+                      className="flex h-7.5 items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/15 px-2.5 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/25 active:scale-95 transition-all shadow-sm"
                     >
-                      <Check className="h-3 w-3 stroke-[3]" />
+                      <Check className="h-3 w-3 stroke-[2.5]" />
                       <span>Terima</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => respondJoinRequest(req.id, 'reject')}
-                      className="flex h-8 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 text-[11px] font-semibold text-rose-300 hover:border-rose-500/50 hover:bg-rose-950/40 active:scale-95 transition-all"
+                      className="flex h-7.5 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-2 text-[11px] font-medium text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 active:scale-95 transition-all"
                     >
-                      <X className="h-3 w-3 stroke-[3]" />
+                      <X className="h-3 w-3 stroke-[2.5]" />
                       <span>Tolak</span>
                     </button>
                   </div>
@@ -491,12 +518,12 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
       )}
 
       {/* SECTION 2: DAFTAR ANGGOTA & PEMBERIAN JABATAN */}
-      <div className="mt-3.5 space-y-3 rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3.5">
-        <div className="border-b border-slate-800/80 pb-2.5">
+      <div className="mt-3.5 space-y-3 rounded-2xl border border-white/[0.07] bg-[#0E131E]/95 p-3.5 sm:p-4 shadow-xl backdrop-blur-xl">
+        <div className="border-b border-white/[0.06] pb-2.5">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-emerald-400" />
-              <h2 className="font-display text-xs font-bold text-white uppercase tracking-wide">
+              <Users className="h-4 w-4 text-slate-400" />
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">
                 Manajemen Anggota & Jabatan Klan
               </h2>
             </div>
@@ -504,12 +531,12 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setIsRoleGuideModalOpen(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-slate-800/90 px-2.5 py-1 text-[10.5px] font-bold text-amber-300 transition-colors hover:border-amber-400 hover:text-white"
+                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10.5px] font-medium text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white"
               >
-                <Award className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                <Award className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <span>Panduan Jabatan</span>
               </button>
-              <span className="font-mono text-[10.5px] font-bold text-slate-300">
+              <span className="font-mono text-[10.5px] font-medium text-slate-400">
                 {currentClan.memberCount}/{currentClan.maxMembers} Anggota
               </span>
             </div>
@@ -519,8 +546,8 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
           </p>
         </div>
 
-        {/* Daftar Anggota dengan Avatar & Border (Persis Gambar 2) */}
-        <div className="space-y-2.5">
+        {/* Daftar Anggota dengan Avatar & Border */}
+        <div className="space-y-2">
           {currentClan.members.map((member, idx) => {
             const isCurrentUser = member.userId === activeAccount.id;
             const avatar = isCurrentUser
@@ -549,19 +576,19 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
             return (
               <div
                 key={member.id}
-                className="flex items-center justify-between gap-2.5 rounded-2xl border border-slate-800/80 bg-slate-950/70 p-2.5 sm:p-3 transition-all"
+                className="flex items-center justify-between gap-2.5 rounded-xl border border-white/[0.05] bg-black/30 p-2.5 sm:p-3 transition-all"
               >
-                {/* Sisi Kiri: Ranking, Avatar + Border, Nama & Level (Persis Gambar 2) */}
+                {/* Sisi Kiri: Ranking, Avatar + Border, Nama & Level */}
                 <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
                   {/* Ranking Number */}
                   <span
                     className={`font-mono text-xs font-bold shrink-0 w-4 text-center ${
                       idx === 0
-                        ? 'text-amber-400'
+                        ? 'text-amber-400/90'
                         : idx === 1
                         ? 'text-slate-300'
                         : idx === 2
-                        ? 'text-amber-600'
+                        ? 'text-amber-600/90'
                         : 'text-slate-500'
                     }`}
                   >
@@ -575,8 +602,8 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                         resolvedBorder
                           ? ''
                           : isLeader
-                          ? 'ring-2 ring-amber-400/80 shadow-[0_0_8px_rgba(251,191,36,0.3)]'
-                          : 'ring-1.5 ring-slate-700'
+                          ? 'ring-1.5 ring-amber-400/60'
+                          : 'ring-1 ring-white/10'
                       }`}
                     >
                       {avatar ? (
@@ -604,7 +631,7 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                           width: `${Math.round(40 / 0.74)}px`,
                           height: `${Math.round(40 / 0.74)}px`,
                         }}
-                        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain z-10 select-none drop-shadow-[0_0_6px_rgba(251,191,36,0.35)]"
+                        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-none object-contain z-10 select-none"
                         onError={(e) => {
                           (e.currentTarget as HTMLElement).style.display = 'none';
                         }}
@@ -615,13 +642,13 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                   {/* Info Nama, Verifikasi & Badges */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="truncate text-xs sm:text-sm font-bold text-white">
+                      <span className="truncate text-xs sm:text-sm font-semibold text-white">
                         {member.name}
                       </span>
                       {isLeader && (
                         <span
                           title="Pemimpin Terverifikasi"
-                          className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white shadow-sm shadow-rose-950/60"
+                          className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white shadow-sm"
                         >
                           <Check className="h-2 w-2 stroke-[3]" />
                         </span>
@@ -629,22 +656,22 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                     </div>
 
                     {/* Baris Badge: Level + EXP Kontribusi */}
-                    <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/50 bg-transparent px-1.5 py-0.5 font-mono text-[9px] font-bold text-emerald-300 shrink-0">
-                        <Shield className="h-2.5 w-2.5 text-emerald-400 shrink-0" />
+                    <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9px] font-medium text-slate-300 shrink-0">
+                        <Shield className="h-2.5 w-2.5 text-slate-400 shrink-0" />
                         <span>Lv. {formattedLevel}</span>
                       </span>
 
-                      <span className="font-mono text-[9.5px] font-semibold text-amber-300 shrink-0">
+                      <span className="font-mono text-[9.5px] text-slate-400 shrink-0">
                         {member.contributionScore.toLocaleString('id-ID')} EXP
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Sisi Kanan: Dropdown Jabatan Kehormatan (Bersih Tanpa Emoji) */}
+                {/* Sisi Kanan: Dropdown Jabatan Kehormatan */}
                 <div className="shrink-0 text-right">
-                  <label className="block text-[9.5px] font-semibold text-slate-400 mb-0.5">
+                  <label className="block text-[9.5px] font-medium text-slate-400 mb-0.5">
                     Jabatan:
                   </label>
                   <select
@@ -652,7 +679,7 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                     onChange={(e) =>
                       updateMemberRole(currentClan.id, member.id, e.target.value)
                     }
-                    className="h-8 rounded-lg border border-slate-700 bg-slate-900 px-2 text-[11px] font-semibold text-sky-200 focus:border-sky-400 focus:outline-none"
+                    className="h-8 rounded-xl border border-white/10 bg-black/50 px-2.5 text-[11px] font-medium text-slate-200 focus:border-sky-400/50 focus:outline-none transition-colors"
                   >
                     {CLAN_ROLES_LIST.map((roleItem) => (
                       <option key={roleItem.id} value={roleItem.id}>
@@ -669,21 +696,21 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
 
       {/* SECTION 3: PEMBUBARAN KLAN (KHUSUS PEMIMPIN KLAN) */}
       {isCurrentUserLeader && (
-        <div className="mt-3.5 space-y-3 rounded-2xl border border-rose-500/30 bg-rose-950/15 p-4 shadow-xl">
+        <div className="mt-3.5 space-y-3 rounded-2xl border border-rose-500/20 bg-rose-950/10 p-3.5 sm:p-4 shadow-xl">
           <div className="flex items-center gap-2 text-rose-300">
             <Trash2 className="h-4 w-4 text-rose-400" />
-            <h3 className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wide">
+            <h3 className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
               Zona Berbahaya: Pembubaran Klan
             </h3>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-xs text-slate-400 leading-relaxed">
             Membubarkan klan akan mengakhiri keanggotaan seluruh anggota secara otomatis dan aman. Seluruh anggota dapat bergabung ke klan lain setelahnya.
           </p>
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-2.5 text-[11px] text-slate-400 space-y-1">
-            <p className="text-emerald-300 font-semibold flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5" /> Akun, EXP, level, dan saldo Crystal tidak akan terhapus.
-            </p>
+          <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 text-[11px] text-slate-400 space-y-1">
             <p className="text-slate-300 flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 text-emerald-400" /> Akun, EXP, level, dan saldo Crystal tidak akan terhapus.
+            </p>
+            <p className="text-slate-400 flex items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5 text-amber-400" /> Tindakan pembubaran klan tidak dapat dibatalkan melalui aplikasi.
             </p>
           </div>
@@ -692,7 +719,7 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
             <button
               type="button"
               onClick={() => setIsDisbandModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-rose-500/50 bg-rose-600/30 px-3.5 py-2 text-xs font-bold text-rose-200 hover:border-rose-400 hover:bg-rose-600 hover:text-white active:scale-95 transition-all shadow-md"
+              className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/15 px-3.5 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/25 active:scale-95 transition-all shadow-sm"
             >
               <Trash2 className="h-3.5 w-3.5 text-rose-300" />
               <span>Hapus & Bubarkan Klan</span>
@@ -703,14 +730,14 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
 
       {/* Modal Dialog Konfirmasi Pembubaran Klan */}
       {isDisbandModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-2xl border border-rose-500/50 bg-[#0B0E14] p-4 text-slate-100 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-2xl border border-rose-500/30 bg-[#0E131E] p-4 text-slate-100 shadow-2xl">
             <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
                 <Trash2 className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-display text-sm font-bold text-white uppercase tracking-wide">
+                <h3 className="font-display text-sm font-bold text-white uppercase tracking-wider">
                   Hapus & Bubarkan Klan
                 </h3>
                 <p className="text-[11px] text-rose-300">{currentClan.name}</p>
@@ -721,12 +748,12 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
               <p>
                 Apakah Anda yakin ingin menghapus klan <strong className="text-white">{currentClan.name}</strong>? Semua anggota ({currentClan.memberCount} orang) akan otomatis dikeluarkan dari klan ini. Tindakan ini tidak dapat dibatalkan melalui aplikasi.
               </p>
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-[11px] text-slate-300 space-y-1">
-                <p className="text-emerald-300 font-semibold flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5" /> Akun, EXP, dan saldo Crystal anggota tetap aman.
+              <div className="rounded-xl border border-white/5 bg-black/30 p-2.5 text-[11px] text-slate-300 space-y-1">
+                <p className="text-slate-300 flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5 text-emerald-400" /> Akun, EXP, dan saldo Crystal anggota tetap aman.
                 </p>
-                <p className="text-sky-300 font-semibold flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5" /> Seluruh anggota dapat bergabung dengan klan lain setelahnya.
+                <p className="text-slate-400 flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5 text-sky-400" /> Seluruh anggota dapat bergabung dengan klan lain setelahnya.
                 </p>
               </div>
             </div>
@@ -736,7 +763,7 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
                 type="button"
                 onClick={() => setIsDisbandModalOpen(false)}
                 disabled={isSubmittingAction}
-                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors"
+                className="flex h-10 flex-1 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-xs font-semibold text-slate-300 hover:bg-white/[0.08] transition-colors"
               >
                 Batal
               </button>
@@ -761,21 +788,21 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
         </div>
       )}
 
-      {/* Pop-up Modal Panduan Hierarki Jabatan (Clean Dark, Tanpa Emoji) */}
+      {/* Pop-up Modal Panduan Hierarki Jabatan */}
       {isRoleGuideModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-[#0B0E14] p-4 text-slate-100 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0E131E] p-4 text-slate-100 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-amber-400" />
-                <h3 className="font-display text-sm font-bold text-white uppercase tracking-wide">
+                <Award className="h-4 w-4 text-slate-400" />
+                <h3 className="font-display text-sm font-bold text-white uppercase tracking-wider">
                   Panduan Hierarki Jabatan Klan
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsRoleGuideModalOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-400 hover:text-white"
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -785,13 +812,13 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
               {CLAN_ROLES_LIST.map((role) => (
                 <div
                   key={role.id}
-                  className="rounded-xl border border-slate-800/80 bg-slate-900/60 p-2.5"
+                  className="rounded-xl border border-white/[0.06] bg-black/30 p-2.5"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-display text-xs font-bold text-amber-300 tracking-wide">
+                    <span className="font-display text-xs font-bold text-white tracking-wide">
                       {role.label}
                     </span>
-                    <span className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-slate-400">
+                    <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9px] font-medium text-slate-400">
                       Gelar Resmi
                     </span>
                   </div>
@@ -802,11 +829,11 @@ export const ClanSettingsScreen: React.FC<ClanSettingsScreenProps> = ({
               ))}
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-800/80">
+            <div className="mt-4 pt-3 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => setIsRoleGuideModalOpen(false)}
-                className="flex h-9 w-full items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-xs font-bold text-white hover:bg-slate-700 transition-colors"
+                className="flex h-9 w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-xs font-semibold text-slate-300 hover:bg-white/[0.08] hover:text-white transition-colors"
               >
                 Tutup Panduan
               </button>
