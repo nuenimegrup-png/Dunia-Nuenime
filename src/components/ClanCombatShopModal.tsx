@@ -420,10 +420,9 @@ export const ClanCombatShopModal: React.FC<ClanCombatShopModalProps> = ({
           {activeTab === 'shop' && (
             <div className="space-y-2.5">
               {/* Notice Banner */}
-              <div className="flex items-start gap-2.5 rounded-2xl border border-sky-500/25 bg-gradient-to-r from-sky-950/30 via-slate-900/40 to-transparent p-2.5 sm:p-3 text-[10.5px] sm:text-[11px] text-sky-200/90 leading-relaxed">
-                <Sparkles className="h-4 w-4 shrink-0 text-sky-400 mt-0.5" />
+              <div className="rounded-2xl border border-sky-500/25 bg-gradient-to-r from-sky-950/30 via-slate-900/40 to-transparent p-2.5 sm:p-3 text-[10.5px] sm:text-[11px] text-sky-200/90 leading-relaxed">
                 <div>
-                  Senjata dibeli menggunakan <strong>Coin kas klan</strong> oleh Ketua Klan. Seluruh anggota klan dapat menggunakan stok ini saat menyerang <strong>Bos Kota Musuh</strong>.
+                  Senjata dibeli menggunakan <strong>Coin kas klan</strong> oleh Ketua Klan. Seluruh anggota klan dapat menggunakan stok ini saat menyerang <strong>Bos Kota</strong>.
                 </div>
               </div>
 
